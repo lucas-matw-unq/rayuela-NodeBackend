@@ -1,17 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdaptiveRecommendationEngine } from './adaptive-recommendation-engine';
 import { Task } from '../../../task/entities/task.entity';
-import { User } from '../../../auth/users/user.entity';
-import { Checkin } from '../checkin.entity';
-import { UserRole } from '../../../auth/users/user.schema';
 import { TimeInterval } from '../../../task/entities/time-restriction.entity';
-import { Feature } from '../../../project/dto/create-project.dto';
+import { ConfigModule } from '@nestjs/config';
+import * as process from 'node:process';
+import { User } from '../../../auth/users/user.entity';
+
+// Testear el arranque en frio, cuando al persona no completo tareas con un resultado aleatorio
+// Ir completando tareas y verificar que se recomiende lo indicado
 
 describe('AdaptiveRecommendationEngine', () => {
   let recommendationEngine: AdaptiveRecommendationEngine;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          envFilePath: '.env.test',
+        }),
+      ],
       providers: [AdaptiveRecommendationEngine],
     }).compile();
 
@@ -24,158 +32,241 @@ describe('AdaptiveRecommendationEngine', () => {
     expect(recommendationEngine).toBeDefined();
   });
 
-  describe('calculateUserSimilarity', () => {
-    it('should return a similarity score based on check-ins', () => {
-      const task = createTestTask('task1');
-      const userA = createTestUser('1', [createTestCheckin('checkin1', task)]);
-      const userB = createTestUser('2', [createTestCheckin('checkin2', task)]);
+  /*
+   * Task similarity tests
+   */
 
-      const similarity = recommendationEngine['calculateUserSimilarity'](
-        userA,
-        userB,
+  describe('calculateTaskSimilarity', () => {
+    it('should return 1 for identical tasks', () => {
+      const task = createTask('task1', 'area1', 'morning', 'type1');
+      expect(recommendationEngine['calculateTaskSimilarity'](task, task)).toBe(
+        1,
       );
-      expect(similarity).toBe(3);
+    });
+
+    it('should return 0 for completely different tasks', () => {
+      const task = createTask('task1', 'area1', 'morning', 'type1');
+      const task2 = createTask('task2', 'area2', 'afternoon', 'type2');
+      expect(recommendationEngine['calculateTaskSimilarity'](task, task2)).toBe(
+        0,
+      );
+    });
+
+    it('should return a similarity score between 0 and 1', () => {
+      const task1 = createTask('task1', 'area1', 'morning', 'type1');
+      const task2 = createTask('task2', 'area1', 'afternoon', 'type2');
+      const similarity = recommendationEngine['calculateTaskSimilarity'](
+        task1,
+        task2,
+      );
+      expect(similarity).toBeGreaterThan(0.33);
+      expect(similarity).toBeLessThan(0.34);
     });
   });
 
-  describe('predictTaskScore', () => {
-    it('should return zero score for users with no tasks in common', () => {
-      const targetUser = createTestUser('1', []);
-      const task = createTestTask('task1');
-      const relatedUser = createTestUser(
-        '2',
+  /*
+   * getMostSimilarTasks tests
+   */
+
+  describe('getMostSimilarTasks', () => {
+    it('should return K tasks', () => {
+      const targetTask = createTask('target', 'area1', 'morning', 'type1');
+      const allTasks = [
+        createTask('task1', 'area1', 'morning', 'type1'),
+        createTask('task2', 'area2', 'afternoon', 'type2'),
+        createTask('task3', 'area1', 'evening', 'type1'),
+        createTask('task4', 'area1', 'evening', 'type5'),
+      ];
+      const similarTasks = recommendationEngine['getMostSimilarTasks'](
+        targetTask,
+        allTasks,
+      );
+      expect(similarTasks.length).toBeLessThanOrEqual(Number(process.env.K));
+    });
+  });
+
+  /*
+   * estimateTaskRating tests
+   */
+  describe('estimateTaskRating', () => {
+    it('should return 0 if no similar tasks have ratings', () => {
+      const estimatedRating = recommendationEngine['estimateTaskRating'](
         [],
-        [
-          {
-            score: 5,
-            checkinId: 'checkin1',
-            taskId: 'task1',
-          },
-        ],
+        {},
       );
-      const allUsers = [relatedUser];
+      expect(estimatedRating).toBe(0);
+    });
 
-      const predictedScore = recommendationEngine['predictTaskScore'](
-        targetUser,
-        task,
-        allUsers,
+    it('should return a weighted average rating', () => {
+      const similarTasks = [
+        {
+          task: createTask('task2', 'area1', 'morning', 'type1'),
+          similarity: 0.8,
+        },
+        {
+          task: createTask('task3', 'area1', 'morning', 'type1'),
+          similarity: 0.6,
+        },
+      ];
+      const ratings = { task2: 5, task3: 3 };
+      const estimatedRating = recommendationEngine['estimateTaskRating'](
+        similarTasks,
+        ratings,
       );
-      expect(predictedScore).toBe(0);
+      expect(estimatedRating).toBeGreaterThan(0.828571);
+      expect(estimatedRating).toBeLessThan(0.828572);
+    });
+
+    it('should return a value between 0 and 1', () => {
+      const similarTasks = [
+        {
+          task: createTask('task4', 'area3', 'morning', 'type4'),
+          similarity: 0.7,
+        },
+        {
+          task: createTask('task5', 'area3', 'morning', 'type4'),
+          similarity: 0.5,
+        },
+      ];
+      const ratings = { task4: 2, task5: 4 };
+      const estimatedRating = recommendationEngine['estimateTaskRating'](
+        similarTasks,
+        ratings,
+      );
+
+      expect(estimatedRating).toBeGreaterThanOrEqual(0);
+      expect(estimatedRating).toBeLessThanOrEqual(1);
     });
   });
 
+  /*
+   * generateRecommendations tests
+   */
   describe('generateRecommendations', () => {
-    it('should return a sorted list of recommended tasks', () => {
-      const targetUser = createTestUser('1', []);
-      const task1 = createTestTask('task1');
-      const task2 = createTestTask(
-        'task2',
-        'afternoon',
-        { start: 12, end: 18 },
-        {
-          id: 'area2',
-          coordinates: [
-            [
-              [2, 2],
-              [3, 3],
-              [3, 2],
-              [2, 2],
-            ],
-          ],
-        },
-        'type2',
+    const user = {
+      contributions: ['task1', 'task2'], // IDs de tareas completadas
+    } as unknown as User;
+
+    it('should return an empty list if no tasks are available', () => {
+      const recommendations = recommendationEngine.generateRecommendations(
+        user,
+        {},
+        [],
       );
-      const tasks = [task1, task2];
-      const allUsers: User[] = [];
+      expect(recommendations).toEqual([]);
+    });
+
+    it('should generate ordered task recommendations', () => {
+      const completedTasksRatings = { task1: 5, task2: 3 };
+      const allTasks = [
+        createTask('task1', 'area1', 'morning', 'type1'),
+        createTask('task3', 'area2', 'afternoon', 'type2'),
+      ];
+      const recommendations = recommendationEngine.generateRecommendations(
+        user,
+        completedTasksRatings,
+        allTasks,
+      );
+      expect(recommendations.length).toBeGreaterThan(0);
+      expect(recommendations[0].estimatedRating).toBeGreaterThanOrEqual(
+        recommendations[1]?.estimatedRating ?? 0,
+      );
+      recommendations.forEach((rec) => {
+        expect(rec.estimatedRating).toBeGreaterThanOrEqual(0);
+        expect(rec.estimatedRating).toBeLessThanOrEqual(1);
+      });
+    });
+
+    /*
+     * cold start tests
+     */
+    it('should handle cold start by assigning default or random ratings', () => {
+      const coldUser = {
+        contributions: [],
+      } as unknown as User;
+
+      const allTasks = [
+        createTask('task1', 'area1', 'morning', 'type1'),
+        createTask('task2', 'area2', 'afternoon', 'type2'),
+        createTask('task3', 'area1', 'evening', 'type1'),
+      ];
 
       const recommendations = recommendationEngine.generateRecommendations(
-        targetUser,
-        tasks,
-        allUsers,
+        coldUser,
+        {},
+        allTasks,
       );
-      expect(recommendations).toBeInstanceOf(Array);
-      expect(recommendations.length).toBe(2);
-      expect(recommendations[0].predictedScore).toBeGreaterThanOrEqual(
-        recommendations[1].predictedScore,
+
+      expect(recommendations.length).toBeGreaterThan(0);
+      recommendations.forEach((rec) => {
+        expect(rec.estimatedRating).toBeGreaterThanOrEqual(0);
+        expect(rec.estimatedRating).toBeLessThanOrEqual(1);
+      });
+    });
+
+    it('should improve recommendations as more tasks are completed', () => {
+      const progressingUser = {
+        contributions: ['task1'],
+      } as unknown as User;
+
+      const completedTasksRatings = { task1: 5 };
+      const allTasks = [
+        createTask('task1', 'area1', 'morning', 'type1'),
+        createTask('task2', 'area1', 'morning', 'type1'),
+        createTask('task3', 'area2', 'evening', 'type3'),
+      ];
+
+      const recommendations = recommendationEngine.generateRecommendations(
+        progressingUser,
+        completedTasksRatings,
+        allTasks,
       );
+
+      expect(recommendations.length).toBeGreaterThan(0);
+      const ratedTask = recommendations.find((r) => r.task.getId() === 'task2');
+      expect(ratedTask?.estimatedRating).toBeGreaterThan(0.5);
+
+      recommendations.forEach((rec) => {
+        expect(rec.estimatedRating).toBeGreaterThanOrEqual(0);
+        expect(rec.estimatedRating).toBeLessThanOrEqual(1);
+      });
     });
   });
+});
 
-  // Funciones auxiliares para crear objetos de prueba
-  function createTestTask(
-    id: string,
-    timeRestrictionName = 'morning',
-    timeRestrictionRange = { start: 6, end: 12 },
-    areaProperties = {
-      id: 'area1',
-      coordinates: [
-        [
-          [0, 0],
-          [1, 1],
-          [1, 0],
-          [0, 0],
-        ],
-      ],
-    },
-    taskType = 'type1',
-  ): Task {
-    const timeInterval = new TimeInterval(
-      timeRestrictionName,
+function createTask(
+  id: string,
+  areaId: string,
+  timeName: string,
+  type: string,
+): Task {
+  return new Task(
+    id,
+    `Task ${id}`,
+    `Description for ${id}`,
+    'project1',
+    new TimeInterval(
+      timeName,
       [1, 2, 3, 4, 5],
-      timeRestrictionRange,
+      { start: 6, end: 12 },
       new Date('2024-01-01'),
       new Date('2024-12-31'),
-    );
-    const areaGeoJSON: Feature = {
+    ),
+    {
       type: 'Feature',
-      properties: { id: areaProperties.id },
+      properties: { id: areaId },
       geometry: {
         type: 'Polygon',
-        coordinates: areaProperties.coordinates,
+        coordinates: [
+          [
+            [0, 0],
+            [1, 1],
+            [1, 0],
+            [0, 0],
+          ],
+        ],
       },
-    };
-    return new Task(
-      id,
-      `Task ${id.slice(-1)}`,
-      `Description ${id.slice(-1)}`,
-      'project1',
-      timeInterval,
-      areaGeoJSON,
-      taskType,
-    );
-  }
-
-  function createTestUser(
-    id: string,
-    checkins: Checkin[] = [],
-    ratings = [],
-  ): User {
-    return new User(
-      `User ${id}`,
-      `user${id}`,
-      `user${id}@example.com`,
-      'password',
-      null,
-      true,
-      UserRole.Volunteer,
-      id,
-      [],
-      [],
-      ratings,
-      checkins,
-    );
-  }
-
-  function createTestCheckin(id: string, task: Task): Checkin {
-    return new Checkin(
-      '12.34',
-      '-56.78',
-      new Date(),
-      'project1',
-      null,
-      'type1',
-      id,
-      task,
-    );
-  }
-});
+    },
+    type,
+  );
+}

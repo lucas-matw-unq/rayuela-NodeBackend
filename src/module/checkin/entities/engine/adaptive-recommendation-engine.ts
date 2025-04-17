@@ -1,98 +1,126 @@
 import { Injectable } from '@nestjs/common';
 import { Task } from '../../../task/entities/task.entity';
 import { User } from '../../../auth/users/user.entity';
-import { Checkin } from '../checkin.entity';
 
 @Injectable()
 export class AdaptiveRecommendationEngine {
-  constructor() {}
+  private readonly k: number;
+  private readonly NEUTRAL_SCORE: number;
+  private RECOMMENDATIONS_LIMIT: number;
+  private MAX_STARS_AMOUNT: number;
 
-  /**
-   * Calcula la similitud entre dos usuarios según sus check-ins y movimientos.
-   */
-  private calculateUserSimilarity(userA: User, userB: User): number {
-    let similarityScore = 0;
-
-    /* {
-      userId: '1-areaId',
-      cantidad: 1,
-    },
-    {
-      userId: '1-tipoDeTarea',
-      cantidad: 0,
-    }*/
-
-    // Comparar check-ins en base a ubicación y tiempo
-    userA.checkins.forEach((checkinA: Checkin) => {
-      userB.checkins.forEach((checkinB: Checkin) => {
-        if (
-          checkinA.relatedTask.areaGeoJSON.properties.id ===
-          checkinB.relatedTask.areaGeoJSON.properties.id
-        ) {
-          similarityScore += 1;
-        }
-        if (checkinA.taskType === checkinB.taskType) {
-          similarityScore += 1;
-        }
-        if (
-          checkinA.relatedTask.timeInterval.name ===
-          checkinB.relatedTask.timeInterval.name
-        ) {
-          similarityScore += 1;
-        }
-      });
-    });
-
-    return similarityScore;
+  constructor() {
+    this.k = Number(process.env.K) || 5; // Valor por defecto si no se define en el entorno
+    this.NEUTRAL_SCORE = Number(process.env.NEUTRAL_SCORE) || 4; // Valor por defecto si no se define en el entorno
+    this.RECOMMENDATIONS_LIMIT =
+      Number(process.env.RECOMMENDATIONS_LIMIT) || 10;
+    this.MAX_STARS_AMOUNT = Number(process.env.MAX_STARS_AMOUNT) || 5; // Valor por defecto si no se define en el entorno
   }
 
   /**
-   * Predice una puntuación para una tarea en función de la similitud con otros usuarios.
+   * Calcula la similitud entre dos tareas usando el coeficiente de Dice.
+   * La similitud se basa en tres características clave:
+   * - Área geográfica
+   * - Intervalo de tiempo
+   * - Tipo de tarea
+   * @returns Un valor entre 0 y 1 indicando la similitud.
    */
-  private predictTaskScore(
-    targetUser: User,
-    task: Task,
-    allUsers: User[],
+  private calculateTaskSimilarity(task1: Task, task2: Task): number {
+    const task1Attributes = new Set([
+      task1.areaGeoJSON.properties.id,
+      task1.timeInterval.name,
+      task1.type,
+    ]);
+    const task2Attributes = new Set([
+      task2.areaGeoJSON.properties.id,
+      task2.timeInterval.name,
+      task2.type,
+    ]);
+
+    const intersectionSize = [...task1Attributes].filter((attr) =>
+      task2Attributes.has(attr),
+    ).length;
+    return (
+      (2 * intersectionSize) / (task1Attributes.size + task2Attributes.size)
+    );
+  }
+
+  /**
+   * Obtiene las K tareas más similares a una dada, ordenadas por similitud.
+   * @param targetTask - La tarea para la que se buscan tareas similares.
+   * @param completedTasks - Lista de tareas completadas por el usuario.
+   * @returns Lista de tareas más similares con su respectiva puntuación de similitud.
+   */
+  private getMostSimilarTasks(
+    targetTask: Task,
+    completedTasks: Task[],
+  ): { task: Task; similarity: number }[] {
+    return completedTasks
+      .map((task) => ({
+        task,
+        similarity: this.calculateTaskSimilarity(targetTask, task),
+      }))
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, this.k);
+  }
+
+  /**
+   * Estima la valoración de una tarea en función de tareas similares y preferencias del usuario.
+   * Usa una media ponderada de las valoraciones de tareas similares.
+   * @param similarTasks - Lista de tareas similares con sus valores de similitud.
+   * @param completedTasksRatings - Diccionario de valoraciones de tareas completadas.
+   * @returns Valoración estimada entre 0 y 1.
+   */
+  private estimateTaskRating(
+    similarTasks: { task: Task; similarity: number }[],
+    completedTasksRatings: Record<string, number>,
   ): number {
-    let weightedSum = 0;
-    let similaritySum = 0;
+    let tot = 0;
+    let sumaSim = 0;
+    // TODO Documentar que el resultado puede estar alterado por ese puntaje arbitrario
+    //  que indica la preferencia del usuario por la realizacion de esa tarea y no otra
+    for (const { task, similarity } of similarTasks) {
+      let rating = completedTasksRatings[task.getId()];
+      if (!rating) {
+        rating = this.NEUTRAL_SCORE; // Si no hay rating, pongo un valor neutral
+      } // Si no hay rating, pongo un valor no neutral definido por ENV var como 4
+      tot += rating * similarity;
+      sumaSim += similarity;
+    }
 
-    // Mockear los k mas cercanos
-    // Solamente evaluar los K mas cercanos!
-    // usar redis
-    // COmo hacer para poder tener precalculados los K mas cercanos, hacerlo en el checkin o aca?
-    // Cuando hacer el calculo de la similitud entre users
-    allUsers.forEach((user) => {
-      if (
-        user.id !== targetUser.id &&
-        user.checkins.find((c: Checkin) => task.getId() === c.contributesTo)
-      ) {
-        // Calcula que tan similares los usuarios
-        const similarity = this.calculateUserSimilarity(targetUser, user);
-        // Compara el score que hizo el usuario observado
-        const score = user.getRatingForTaskId(task.getId()) || 0;
-        // Pondera el score con la similarity
-        weightedSum += similarity * score; // TODO Este valor tiene que estar entre 0 y 1
-        similaritySum += similarity;
-      }
-    });
-
-    return similaritySum === 0 ? 0 : weightedSum / similaritySum;
+    // Poner el 5 en env var como STARS_AMOUNT o algo asi.
+    return sumaSim === 0 ? 0 : tot / sumaSim / this.MAX_STARS_AMOUNT;
   }
 
   /**
-   * Genera recomendaciones personalizadas de tareas según múltiples criterios.
+   * Genera recomendaciones de tareas personalizadas según las tareas completadas.
+   * Filtra tareas ya completadas, encuentra las más similares y estima su valoración.
+   * @param user
+   * @param completedTasksRatings - Diccionario con las valoraciones de tareas completadas.
+   * @param allTasks - Lista de todas las tareas disponibles.
+   * @returns Lista de tareas recomendadas ordenadas por valoración estimada.
    */
   generateRecommendations(
-    targetUser: User,
+    user: User,
+    completedTasksRatings: Record<string, number>,
     allTasks: Task[],
-    allUsers: User[],
-  ): { task: Task; predictedScore: number }[] {
-    return allTasks
-      .map((task) => ({
-        task: task,
-        predictedScore: this.predictTaskScore(targetUser, task, allUsers),
-      }))
-      .sort((a, b) => b.predictedScore - a.predictedScore); // Ordenar de mayor a menor puntuación
+  ): { task: Task; estimatedRating: number }[] {
+    const completedTasks = allTasks.filter((task) =>
+      user.contributions.includes(task.getId()),
+    );
+    const nonCompletedTasks = allTasks.filter((task) => !task.solved);
+    return nonCompletedTasks // Excluye tareas ya completadas
+      .map((task) => {
+        const similarTasks = this.getMostSimilarTasks(task, completedTasks);
+        return {
+          task,
+          estimatedRating: this.estimateTaskRating(
+            similarTasks,
+            completedTasksRatings,
+          ),
+        };
+      })
+      .sort((a, b) => b.estimatedRating - a.estimatedRating)
+      .slice(0, this.RECOMMENDATIONS_LIMIT);
   }
 }
