@@ -113,4 +113,17 @@ export class Task {
   setSolved(solved: boolean) {
     this.#solved = solved;
   }
+
+  toJSON() {
+    return {
+      id: this.#_id,
+      name: this.#name,
+      description: this.#description,
+      projectId: this.#projectId,
+      timeInterval: this.#timeInterval,
+      areaGeoJSON: this.#areaGeoJSON,
+      type: this.#type,
+      solved: this.#solved,
+    };
+  }
 }

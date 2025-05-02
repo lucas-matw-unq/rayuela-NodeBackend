@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -39,8 +40,11 @@ export class TaskController {
 
   @UseGuards(JwtAuthGuard)
   @Get('/project/:id')
-  async findAllByProject(@Param('id') projectId: string) {
-    return await this.taskService.findRawByProjectId(projectId);
+  async findAllByProject(@Param('id') projectId: string, @Req() req) {
+    return await this.taskService.findRawByProjectId(
+      projectId,
+      req.user.username,
+    );
   }
 
   @UseGuards(JwtAuthGuard)

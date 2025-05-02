@@ -1,4 +1,4 @@
-import { TaskDocument } from '../../task/persistence/task.schema';
+import { Task } from '../../task/entities/task.entity';
 
 export class Gamification {
   constructor(
@@ -97,11 +97,11 @@ export class PointRule {
     return this.taskType === taskType || this.taskType === ANY_KIND;
   }
 
-  matchTask(task: TaskDocument) {
+  matchTask(task: Task) {
     return (
       this.matchTaskType(task.type) &&
-      this.matchArea(task.areaId.toString()) &&
-      this.matchTimeInterval(task.timeIntervalId.toString())
+      this.matchArea(task.areaGeoJSON.properties.id.toString()) &&
+      this.matchTimeInterval(task.timeInterval.name.toString())
     );
   }
 }

@@ -80,7 +80,7 @@ export class TaskDao {
       doc.name,
       doc.description,
       doc.projectId.toString(),
-      this.mapTimeRestriction(doc.timeIntervalId, project),
+      this.mapTimeRestriction(doc.timeIntervalId.toString(), project),
       area,
       doc.type,
       doc.solved,
@@ -88,8 +88,8 @@ export class TaskDao {
   }
 
   private mapTimeRestriction(
-    timeIntervalId,
-    project: ProjectTemplate,
+    timeIntervalId: string,
+    project: Project,
   ): TimeInterval {
     const ti = project.timeIntervals.find((t) => t.name === timeIntervalId);
     return new TimeInterval(
@@ -117,7 +117,11 @@ export class TaskDao {
     if (!tasks) {
       throw new NotFoundException('No tasks found for this project');
     }
-    return tasks;
+    const res: Task[] = [];
+    for (const task of tasks) {
+      res.push(await this.mapDocToTask(task));
+    }
+    return res;
   }
 
   async setTaskAsSolved(id: string): Promise<TaskDocument | null> {

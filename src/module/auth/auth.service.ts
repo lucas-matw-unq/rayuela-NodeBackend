@@ -109,4 +109,11 @@ export class AuthService {
       console.error('Error al enviar el correo:', error);
     }
   }
+
+  async recoverPassword(token: string, newPassword: string) {
+    const u = await this.usersService.getUserByResetToken(token);
+    u.password = await this.hashPassword(newPassword);
+    u.resetToken = null;
+    return await this.usersService.update(u.id, u);
+  }
 }

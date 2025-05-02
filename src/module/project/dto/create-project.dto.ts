@@ -5,6 +5,11 @@ export enum GamificationStrategy {
   ELASTIC = 'ELASTICA',
 }
 
+export enum RecommendationStrategy {
+  SIMPLE = 'SIMPLE',
+  ADAPTIVE = 'ADAPTIVE',
+}
+
 export class CreateProjectDto {
   name: string;
   description?: string;

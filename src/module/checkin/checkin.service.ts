@@ -13,6 +13,7 @@ import { MoveDao } from './persistence/move.dao';
 import { GamificationService } from '../gamification/gamification.service';
 import { Project } from '../project/entities/project';
 import { User } from '../auth/users/user.entity';
+import { GamificationEngineFactory } from '../gamification/entities/engine/gamification/gamification-strategy-factory';
 
 @Injectable()
 export class CheckinService {
@@ -23,6 +24,7 @@ export class CheckinService {
     private readonly userService: UserService,
     private readonly projectService: ProjectService,
     private readonly gamificationService: GamificationService,
+    private readonly gamificationFactory: GamificationEngineFactory,
   ) {}
 
   async create(createCheckinDto: CreateCheckinDto) {
@@ -73,7 +75,19 @@ export class CheckinService {
     users: User[],
     project: Project & { user?: UserStatus },
   ) {
+    const badgeEngine = this.gamificationFactory.getBadgeEngine(
+      project.gamificationStrategy,
+    );
+    const pointsEngine = this.gamificationFactory.getPointsEngine(
+      project.gamificationStrategy,
+    );
+    const leaderboardEngine = this.gamificationFactory.getLeaderboardEngine(
+      project.gamificationStrategy,
+    );
     return new GameBuilder()
+      .withBadgeEngine(badgeEngine)
+      .withPointsEngine(pointsEngine)
+      .withLeaderboardEngine(leaderboardEngine)
       .withTasks(tasks)
       .withUsers(users)
       .withProject(project)

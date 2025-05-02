@@ -71,12 +71,12 @@ export class ProjectService {
   }
 
   async getTaskCombinations(id: string) {
-    const project: ProjectTemplate = await this.projectDao.findOne(id);
+    const project: Project = await this.projectDao.findOne(id);
     if (!project) {
       throw new NotFoundException('Project not Found');
     }
     const combinations = [];
-    project.areas.forEach((area) => {
+    project.areas.features.map((area) => {
       project.taskTypes.forEach((type) => {
         project.timeIntervals.forEach((timeInterval) => {
           combinations.push([

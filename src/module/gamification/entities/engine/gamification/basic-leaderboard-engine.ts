@@ -1,7 +1,10 @@
-import { LeaderboardEngine, LeaderboardUser } from '../game.entity';
-import { User } from '../../../auth/users/user.entity';
-import { Project } from '../../../project/entities/project';
-import { GamificationStrategy } from '../../../project/dto/create-project.dto';
+import {
+  LeaderboardEngine,
+  LeaderboardUser,
+} from '../../../../checkin/entities/game.entity';
+import { User } from '../../../../auth/users/user.entity';
+import { Project } from '../../../../project/entities/project';
+import { GamificationStrategy } from '../../../../project/dto/create-project.dto';
 
 export class BasicLeaderbardEngine implements LeaderboardEngine {
   assignableTo(project: Project): boolean {

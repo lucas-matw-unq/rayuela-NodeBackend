@@ -1,6 +1,9 @@
 import { ProjectTemplate } from '../persistence/project.schema';
 import { Project } from './project';
-import { GamificationStrategy } from '../dto/create-project.dto';
+import {
+  GamificationStrategy,
+  RecommendationStrategy,
+} from '../dto/create-project.dto';
 
 export class ProjectMapper {
   static toEntity(template: ProjectTemplate & { _id: string }): Project {
@@ -17,6 +20,7 @@ export class ProjectMapper {
       template.ownerId,
       null,
       template.gamificationStrategy as GamificationStrategy,
+      template.recomemendationStrategy as RecommendationStrategy,
     );
   }
 

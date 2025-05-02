@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Task } from '../../../task/entities/task.entity';
-import { User } from '../../../auth/users/user.entity';
+import { Task } from '../../../../task/entities/task.entity';
+import { User } from '../../../../auth/users/user.entity';
+import { IRecommendationEngine } from './i-recommendation-engine';
 
 @Injectable()
-export class AdaptiveRecommendationEngine {
+export class AdaptiveRecommendationEngine implements IRecommendationEngine {
   private readonly k: number;
   private readonly NEUTRAL_SCORE: number;
   private RECOMMENDATIONS_LIMIT: number;

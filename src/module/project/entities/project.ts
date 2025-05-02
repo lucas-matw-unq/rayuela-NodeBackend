@@ -3,6 +3,7 @@ import { Gamification } from '../../gamification/entities/gamification.entity';
 import {
   FeatureCollection,
   GamificationStrategy,
+  RecommendationStrategy,
 } from '../dto/create-project.dto';
 
 export class Project {
@@ -19,6 +20,7 @@ export class Project {
     ownerId: string,
     gamification: Gamification,
     gamificationStrategy: GamificationStrategy,
+    recommendationStrategy: RecommendationStrategy,
   ) {
     this.id = id;
     this.name = name;
@@ -32,6 +34,7 @@ export class Project {
     this.ownerId = ownerId;
     this.gamification = gamification;
     this.gamificationStrategy = gamificationStrategy;
+    this.recommendationStrategy = recommendationStrategy;
   }
 
   id: string;
@@ -46,4 +49,5 @@ export class Project {
   ownerId: string;
   gamification: Gamification;
   gamificationStrategy: GamificationStrategy;
+  recommendationStrategy: RecommendationStrategy;
 }

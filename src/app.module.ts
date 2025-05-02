@@ -8,7 +8,7 @@ import { AuthModule } from './module/auth/auth.module';
 import { TaskModule } from './module/task/task.module';
 import { CheckinModule } from './module/checkin/checkin.module';
 import { VolunteerModule } from './module/volunteer/volunteer.module';
-import { GamificationModule } from './module/gamification/gamificationModule';
+import { GamificationModule } from './module/gamification/gamification.module';
 import { LeaderboardModule } from './module/leaderboard/leaderboard.module';
 
 @Module({

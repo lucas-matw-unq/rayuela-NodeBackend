@@ -7,6 +7,9 @@ import { TaskDao } from './persistence/task.dao';
 import { TaskSchema, TaskSchemaTemplate } from './persistence/task.schema';
 import { ProjectModule } from '../project/project.module';
 import { LeaderboardModule } from '../leaderboard/leaderboard.module';
+import { RecommendationEngineFactory } from '../gamification/entities/engine/recommendation/recommendation-engine-factory';
+import { AdaptiveRecommendationEngine } from '../gamification/entities/engine/recommendation/adaptive-recommendation-engine';
+import { SimpleRecommendationEngine } from '../gamification/entities/engine/recommendation/simple-recommendation-engine';
 
 @Module({
   imports: [
@@ -18,7 +21,13 @@ import { LeaderboardModule } from '../leaderboard/leaderboard.module';
     LeaderboardModule,
   ],
   controllers: [TaskController],
-  providers: [TaskService, TaskDao],
+  providers: [
+    TaskService,
+    TaskDao,
+    RecommendationEngineFactory,
+    AdaptiveRecommendationEngine,
+    SimpleRecommendationEngine,
+  ],
   exports: [TaskService],
 })
 export class TaskModule {}

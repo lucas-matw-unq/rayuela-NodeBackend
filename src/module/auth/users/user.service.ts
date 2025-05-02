@@ -45,4 +45,8 @@ export class UserService {
     await this.update(u.id, u);
     return u;
   }
+
+  getUserByResetToken(token: string) {
+    return this.userDao.getUserByResetToken(token);
+  }
 }

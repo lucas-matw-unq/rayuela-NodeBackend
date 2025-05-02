@@ -1,16 +1,16 @@
-import { Game, PointsEngine } from '../game.entity';
-import { Checkin } from '../checkin.entity';
-import { PointRule } from '../../../gamification/entities/gamification.entity';
-import { Project } from '../../../project/entities/project';
+import { Game, PointsEngine } from '../../../../checkin/entities/game.entity';
+import { Checkin } from '../../../../checkin/entities/checkin.entity';
+import { PointRule } from '../../gamification.entity';
+import { Project } from '../../../../project/entities/project';
 import {
   Feature,
   FeatureCollection,
   GamificationStrategy,
-} from '../../../project/dto/create-project.dto';
-import { GeoUtils } from '../../../task/utils/geoUtils';
-import { TimeInterval } from '../../../task/entities/time-restriction.entity';
-import { TaskDocument } from '../../../task/persistence/task.schema';
-import { UserStatus } from '../../../project/project.service';
+} from '../../../../project/dto/create-project.dto';
+import { GeoUtils } from '../../../../task/utils/geoUtils';
+import { TimeInterval } from '../../../../task/entities/time-restriction.entity';
+import { UserStatus } from '../../../../project/project.service';
+import { Task } from '../../../../task/entities/task.entity';
 
 export class BasicPointsEngine implements PointsEngine {
   assignableTo(project: Project): boolean {
@@ -69,10 +69,7 @@ export class BasicPointsEngine implements PointsEngine {
     return timeIntervals.find((t) => t.name === timeIntervalId);
   }
 
-  calculatePoints(
-    task: TaskDocument,
-    project: Project & { user?: UserStatus },
-  ) {
+  calculatePoints(task: Task, project: Project & { user?: UserStatus }) {
     return project.gamification.pointRules.reduce((acc, rule) => {
       return acc + (rule.matchTask(task) ? rule.score : 0);
     }, 0);

@@ -5,7 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ProjectTemplate, ProjectSchema } from './persistence/project.schema';
 import { ProjectDao } from './persistence/project.dao';
 import { AuthModule } from '../auth/auth.module';
-import { GamificationModule } from '../gamification/gamificationModule';
+import { GamificationModule } from '../gamification/gamification.module';
 import { LeaderboardModule } from '../leaderboard/leaderboard.module';
 
 @Module({

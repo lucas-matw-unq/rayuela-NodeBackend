@@ -6,6 +6,7 @@ import {
   CreateProjectDto,
   Feature,
   GamificationStrategy,
+  RecommendationStrategy,
 } from '../dto/create-project.dto';
 import { UpdateProjectDto } from '../dto/update-project.dto';
 import { Project } from '../entities/project';
@@ -53,6 +54,7 @@ export class ProjectDao {
       project.ownerId,
       gamification,
       project.gamificationStrategy as GamificationStrategy,
+      project.recomemendationStrategy as RecommendationStrategy,
     );
   }
 

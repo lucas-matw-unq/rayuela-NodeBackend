@@ -40,6 +40,19 @@ export class AuthController {
     return this.authService.login(user);
   }
 
+  @Post('recover-password')
+  async recoverPassword(@Body() body: { token: string; newPassword: string }) {
+    const { token, newPassword } = body;
+
+    if (!token || !newPassword) {
+      throw new BadRequestException('Token and new password are required');
+    }
+
+    await this.authService.recoverPassword(token, newPassword);
+    return {
+      message: 'Password has been successfully updated',
+    };
+  }
   @Post('forgot-password')
   async forgotPassword(@Body() body: { email: string }) {
     const { email } = body;

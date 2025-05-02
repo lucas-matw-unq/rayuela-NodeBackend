@@ -3,10 +3,6 @@ import { Checkin } from './checkin.entity';
 import { Task } from '../../task/entities/task.entity';
 import { User } from '../../auth/users/user.entity';
 import { BadgeRule } from '../../gamification/entities/gamification.entity';
-import { BasicPointsEngine } from './engine/basic-points-engine';
-import { BasicBadgeEngine } from './engine/basic-badge-engine';
-import { BasicLeaderbardEngine } from './engine/basic-leaderboard-engine';
-import { ElasticPointsEngine } from './engine/elastic-points-engine';
 
 interface Engine {
   assignableTo(project: Project): boolean;
@@ -97,16 +93,24 @@ export class GameBuilder {
   private project: Project | null = null;
   private tasks: Task[] | null = null;
   private users: User[] | null = null;
+  private pointsEngine: PointsEngine;
+  private badgeEngine: BadgeEngine;
+  private leaderboardEngine: LeaderboardEngine;
 
-  private availablePointsEngine: PointsEngine[] = [
-    new BasicPointsEngine(),
-    new ElasticPointsEngine(),
-  ];
+  withPointsEngine(pointsEngine: PointsEngine): this {
+    this.pointsEngine = pointsEngine;
+    return this;
+  }
 
-  private availableBadgeEngine: BadgeEngine[] = [new BasicBadgeEngine()];
-  private availableLeaderboardEngine: LeaderboardEngine[] = [
-    new BasicLeaderbardEngine(),
-  ];
+  withBadgeEngine(badgeEngine: BadgeEngine): this {
+    this.badgeEngine = badgeEngine;
+    return this;
+  }
+
+  withLeaderboardEngine(leaderboardEngine: LeaderboardEngine): this {
+    this.leaderboardEngine = leaderboardEngine;
+    return this;
+  }
 
   withProject(project: Project): this {
     this.project = project;
@@ -124,43 +128,23 @@ export class GameBuilder {
   }
 
   build(): Game {
-    const pointsEngine = this.assignPointsEngine(this.project);
-    const leaderboardEngine = this.assignLeaderboardEngine();
-    const badgeEngine = this.assignBadgeEngine();
-    if (!this.project || !pointsEngine || !badgeEngine || !leaderboardEngine) {
+    if (
+      !this.project ||
+      !this.pointsEngine ||
+      !this.badgeEngine ||
+      !this.leaderboardEngine
+    ) {
       throw new Error(
         'All dependencies must be provided before building the Game instance',
       );
     }
     return new Game(
       this.project,
-      pointsEngine,
-      badgeEngine,
-      leaderboardEngine,
+      this.pointsEngine,
+      this.badgeEngine,
+      this.leaderboardEngine,
       this.tasks,
       this.users,
-    );
-  }
-
-  assignPointsEngine(project: Project): PointsEngine {
-    return (
-      this.availablePointsEngine.find((pe) => pe.assignableTo(project)) ||
-      this.availablePointsEngine[0]
-    );
-  }
-
-  private assignBadgeEngine(): BadgeEngine {
-    return (
-      this.availableBadgeEngine.find((be) => be.assignableTo(this.project)) ||
-      this.availableBadgeEngine[0]
-    );
-  }
-
-  private assignLeaderboardEngine(): LeaderboardEngine {
-    return (
-      this.availableLeaderboardEngine.find((le) =>
-        le.assignableTo(this.project),
-      ) || this.availableLeaderboardEngine[0]
     );
   }
 }

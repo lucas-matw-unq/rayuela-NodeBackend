@@ -53,4 +53,9 @@ export class UserDao {
 
     return userDocuments.map((doc) => UserMapper.toEntity(doc));
   }
+
+  async getUserByResetToken(token: string) {
+    const u = await this.userModel.findOne({ resetToken: token }).exec();
+    return UserMapper.toEntity(u);
+  }
 }

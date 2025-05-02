@@ -9,7 +9,7 @@ import { TaskModule } from '../task/task.module';
 import { ProjectModule } from '../project/project.module';
 import { MoveSchema, MoveTemplate } from './persistence/move.schema';
 import { MoveDao } from './persistence/move.dao';
-import { GamificationModule } from '../gamification/gamificationModule';
+import { GamificationModule } from '../gamification/gamification.module';
 
 @Module({
   imports: [

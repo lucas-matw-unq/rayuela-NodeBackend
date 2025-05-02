@@ -1,12 +1,12 @@
-import { BadgeEngine } from '../game.entity';
-import { User } from '../../../auth/users/user.entity';
-import { Checkin } from '../checkin.entity';
-import { Project } from '../../../project/entities/project';
-import { BadgeRule } from '../../../gamification/entities/gamification.entity';
+import { BadgeEngine } from '../../../../checkin/entities/game.entity';
+import { User } from '../../../../auth/users/user.entity';
+import { Checkin } from '../../../../checkin/entities/checkin.entity';
+import { Project } from '../../../../project/entities/project';
+import { BadgeRule } from '../../gamification.entity';
 import { BadRequestException } from '@nestjs/common';
-import { TimeInterval } from '../../../task/entities/time-restriction.entity';
-import { GeoUtils } from '../../../task/utils/geoUtils';
-import { GamificationStrategy } from '../../../project/dto/create-project.dto';
+import { TimeInterval } from '../../../../task/entities/time-restriction.entity';
+import { GeoUtils } from '../../../../task/utils/geoUtils';
+import { GamificationStrategy } from '../../../../project/dto/create-project.dto';
 
 export class BasicBadgeEngine implements BadgeEngine {
   assignableTo(project: Project): boolean {

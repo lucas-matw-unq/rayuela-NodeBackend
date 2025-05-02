@@ -1,7 +1,7 @@
-import { Game, PointsEngine } from '../game.entity';
-import { Project } from '../../../project/entities/project';
-import { GamificationStrategy } from '../../../project/dto/create-project.dto';
-import { Checkin } from '../checkin.entity';
+import { Game, PointsEngine } from '../../../../checkin/entities/game.entity';
+import { Project } from '../../../../project/entities/project';
+import { GamificationStrategy } from '../../../../project/dto/create-project.dto';
+import { Checkin } from '../../../../checkin/entities/checkin.entity';
 import { BasicPointsEngine } from './basic-points-engine';
 
 export class ElasticPointsEngine implements PointsEngine {

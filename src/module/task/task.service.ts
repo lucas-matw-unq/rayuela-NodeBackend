@@ -8,13 +8,18 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskDao } from './persistence/task.dao';
 import { Task } from './entities/task.entity';
 import { ProjectService } from '../project/project.service';
-import { BasicPointsEngine } from '../checkin/entities/engine/basic-points-engine';
+import { BasicPointsEngine } from '../gamification/entities/engine/gamification/basic-points-engine';
+import { AdaptiveRecommendationEngine } from '../gamification/entities/engine/recommendation/adaptive-recommendation-engine';
+import { UserService } from '../auth/users/user.service';
+import { RecommendationEngineFactory } from '../gamification/entities/engine/recommendation/recommendation-engine-factory';
 
 @Injectable()
 export class TaskService {
   constructor(
     private readonly taskDao: TaskDao,
     private readonly projectService: ProjectService,
+    private readonly userService: UserService,
+    private readonly recommendationFactory: RecommendationEngineFactory,
   ) {}
 
   async create(createTaskDto: CreateTaskDto) {
@@ -31,12 +36,22 @@ export class TaskService {
     return await this.taskDao.create(createTaskDto);
   }
 
-  async findRawByProjectId(projectId: string): Promise<any> {
+  async findRawByProjectId(projectId: string, username: string): Promise<any> {
+    const allTasks = await this.taskDao.getRawTasksByProject(projectId);
+    const user = await this.userService.findByEmailOrUsername('', username);
     const project = await this.projectService.findOne(projectId);
-    const rawTasks = await this.taskDao.getRawTasksByProject(projectId);
-    return rawTasks.map((task) => ({
-      ...task['_doc'],
-      points: new BasicPointsEngine().calculatePoints(task, project),
+    const recommendationEngine = this.recommendationFactory.getEngine(
+      project.recommendationStrategy,
+    );
+
+    const recommendations = recommendationEngine.generateRecommendations(
+      user,
+      Object.fromEntries(user.ratings.map((r) => [r.taskId, r.score])),
+      allTasks,
+    );
+    return recommendations.map((tr) => ({
+      ...tr.task.toJSON(),
+      points: new BasicPointsEngine().calculatePoints(tr.task, project),
     }));
   }
 

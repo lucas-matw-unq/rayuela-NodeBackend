@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AdaptiveRecommendationEngine } from './adaptive-recommendation-engine';
-import { Task } from '../../../task/entities/task.entity';
-import { TimeInterval } from '../../../task/entities/time-restriction.entity';
+import { Task } from '../../../../task/entities/task.entity';
+import { TimeInterval } from '../../../../task/entities/time-restriction.entity';
 import { ConfigModule } from '@nestjs/config';
 import * as process from 'node:process';
-import { User } from '../../../auth/users/user.entity';
+import { User } from '../../../../auth/users/user.entity';
 
 // Testear el arranque en frio, cuando al persona no completo tareas con un resultado aleatorio
 // Ir completando tareas y verificar que se recomiende lo indicado

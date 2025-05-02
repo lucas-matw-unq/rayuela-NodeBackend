@@ -15,6 +15,9 @@ export interface UserRating {
 }
 
 export class User {
+  set password(value: string) {
+    this._password = value;
+  }
   get checkins(): Checkin[] {
     return this._checkins;
   }
@@ -96,8 +99,6 @@ export class User {
     this._ratings = ratings;
     this._checkins = checkins;
   }
-
-  // Getters
 
   get password(): string {
     return this._password;

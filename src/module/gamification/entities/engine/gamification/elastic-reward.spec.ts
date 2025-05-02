@@ -1,12 +1,12 @@
 import { ElasticPointsEngine } from './elastic-points-engine';
-import { Checkin } from '../checkin.entity';
-import { GamificationStrategy } from '../../../project/dto/create-project.dto';
+import { Checkin } from '../../../../checkin/entities/checkin.entity';
+import { GamificationStrategy } from '../../../../project/dto/create-project.dto';
 import { BasicPointsEngine } from './basic-points-engine';
-import { User } from '../../../auth/users/user.entity';
-import { Project } from '../../../project/entities/project';
+import { User } from '../../../../auth/users/user.entity';
+import { Project } from '../../../../project/entities/project';
 import { BasicBadgeEngine } from './basic-badge-engine';
 import { BasicLeaderbardEngine } from './basic-leaderboard-engine';
-import { Game } from '../game.entity';
+import { Game } from '../../../../checkin/entities/game.entity';
 
 jest.mock('./basic-points-engine');
 
