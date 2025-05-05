@@ -68,6 +68,25 @@ export class AuthController {
     };
   }
 
+  @Post('verify-email')
+  async verifyToken(@Body() body: { token: string }) {
+    const { token } = body;
+
+    if (!token) {
+      throw new BadRequestException('Token is required');
+    }
+
+    const user = await this.authService.verifyEmail(token);
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+
+    return {
+      message: 'Token is valid',
+      user,
+    };
+  }
+
   @Post('register')
   async register(
     @Body()

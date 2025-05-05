@@ -41,7 +41,7 @@ export class AuthService {
     return null;
   }
 
-  async register(registerDto: RegisterUserDTO): Promise<User> {
+  async register(registerDto: RegisterUserDTO): Promise<void> {
     // Verifica que el correo y el username no estén ya en uso
     const existingUser = await this.usersService.findByEmailOrUsername(
       registerDto.email,
@@ -52,17 +52,62 @@ export class AuthService {
     }
     const pw = await this.hashPassword(registerDto.password);
 
-    return await this.usersService.create(
-      new User(
-        registerDto.complete_name,
-        registerDto.username,
-        registerDto.email,
-        pw,
-        registerDto.profile_image,
-        false,
-        registerDto.role,
-      ),
+    // Genera un token de verificación
+    const verificationToken = uuidv4();
+
+    // Crea el usuario con el token de verificación
+    const newUser = new User(
+      registerDto.complete_name,
+      registerDto.username,
+      registerDto.email,
+      pw,
+      registerDto.profile_image,
+      false, // Usuario no verificado
+      registerDto.role,
     );
+    newUser.resetToken = verificationToken;
+
+    await this.usersService.create(newUser);
+
+    await this.sendVerificationEmail(verificationToken, registerDto);
+  }
+
+  async verifyEmail(token: string): Promise<User> {
+    const user = await this.usersService.getUserByResetToken(token);
+    if (!user) {
+      throw new BadRequestException('Token inválido o expirado');
+    }
+    user.verifyAccount();
+    user.resetToken = null;
+    return await this.usersService.update(user.id, user);
+  }
+
+  private async sendVerificationEmail(
+    verificationToken: string | Uint8Array,
+    registerDto: RegisterUserDTO,
+  ) {
+    // Envía el correo de verificación
+    const host =
+      process.env.NODE_ENV === 'production'
+        ? 'https://rayuela-frontend.vercel.app'
+        : 'http://localhost:5173';
+    const verificationLink = `${host}/verify-email?token=${verificationToken}`;
+    const mailOptions = {
+      from: 'noreply@rayuela.com',
+      to: registerDto.email,
+      subject: 'Verificación de correo',
+      text: `Por favor, verifica tu correo haciendo clic en el siguiente enlace: ${verificationLink}`,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log('Correo de verificación enviado con éxito');
+    } catch (error) {
+      console.error('Error al enviar el correo de verificación:', error);
+      throw new BadRequestException(
+        'Error al enviar el correo de verificación',
+      );
+    }
   }
 
   async hashPassword(password: string): Promise<string> {
