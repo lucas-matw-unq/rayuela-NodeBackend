@@ -15,7 +15,7 @@ services:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
-      - mongodb x
+      - mongodb
   mongodb:
     image: mongo:latest
     container_name: mongodb
