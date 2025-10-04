@@ -6,7 +6,6 @@ import { UpdateBadgeRuleDTO } from './dto/update-badge-rule-d-t.o';
 import { CreateScoreRuleDto } from './dto/create-score-rule-dto';
 import { UpdateScoreRuleDto } from './dto/update-score-rule.dto';
 import { Move } from '../checkin/entities/move.entity';
-import { Task } from '../task/entities/task.entity';
 
 @Injectable()
 export class GamificationService {

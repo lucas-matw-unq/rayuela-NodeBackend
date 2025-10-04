@@ -1,6 +1,9 @@
 import { ElasticPointsEngine } from './elastic-points-engine';
 import { Checkin } from '../../../../checkin/entities/checkin.entity';
-import { GamificationStrategy } from '../../../../project/dto/create-project.dto';
+import {
+  GamificationStrategy,
+  RecommendationStrategy,
+} from '../../../../project/dto/create-project.dto';
 import { BasicPointsEngine } from './basic-points-engine';
 import { User } from '../../../../auth/users/user.entity';
 import { Project } from '../../../../project/entities/project';
@@ -58,6 +61,7 @@ describe('ElasticPointsEngine', () => {
       'user1',
       null,
       GamificationStrategy.ELASTIC,
+      RecommendationStrategy.SIMPLE,
     );
 
     mockGame = new Game(

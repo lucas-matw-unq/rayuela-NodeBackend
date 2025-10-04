@@ -34,7 +34,7 @@ export class CheckinService {
     const game = this.buildGame(tasks, users, project);
 
     checkin.contributesTo = tasks
-      .find((t) => t.accept(checkin) && !t.solved)
+      .find((t) => t.contributesToCheckin(checkin))
       ?.getId();
     const gameStatus = game.play(checkin);
     const move = new Move(checkin, gameStatus);

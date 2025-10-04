@@ -126,4 +126,8 @@ export class Task {
       solved: this.#solved,
     };
   }
+
+  contributesToCheckin(checkin: Checkin) {
+    return this.accept(checkin) && !this.solved;
+  }
 }

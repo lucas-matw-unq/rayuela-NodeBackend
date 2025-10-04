@@ -11,6 +11,7 @@ import { VolunteerModule } from './module/volunteer/volunteer.module';
 import { GamificationModule } from './module/gamification/gamification.module';
 import { LeaderboardModule } from './module/leaderboard/leaderboard.module';
 
+console.log(process.env.DB_CONNECTION as string);
 @Module({
   imports: [
     ConfigModule.forRoot({
