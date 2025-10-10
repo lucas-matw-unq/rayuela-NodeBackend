@@ -17,11 +17,11 @@ services:
     depends_on:
       - mongodb
   mongodb:
-    image: mongo:4.4
+    image: mongo:latest
     container_name: mongodb
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
     ports:
       - "27017:27017"
     volumes:

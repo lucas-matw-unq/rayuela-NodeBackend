@@ -3,6 +3,11 @@
 /node_modules
 /build
 
+# Certificados SSL/TLS
+certs/
+
+docker-compose.yml
+
 # Logs
 logs
 *.log
