@@ -17,7 +17,7 @@ services:
     depends_on:
       - mongodb
   mongodb:
-    image: mongo:latest
+    image: mongo:4.4
     container_name: mongodb
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
@@ -29,3 +29,4 @@ services:
 
 volumes:
   mongodb_data:
+
