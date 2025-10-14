@@ -16,17 +16,23 @@ services:
       - /usr/src/app/node_modules
     depends_on:
       - mongodb
+    networks:
+      - rayuela_net
   mongodb:
     image: mongo:4.4
     container_name: mongodb
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=root
+      - MONGO_INITDB_ROOT_USERNAME={MONGO_USER}
+      - MONGO_INITDB_ROOT_PASSWORD={MONGO_PASSWORD}
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-
+    networks:
+      - rayuela_net
 volumes:
   mongodb_data:
 
+networks:
+  rayuela_net:
+    external: true

@@ -8,7 +8,7 @@ async function bootstrap() {
   });
 
   // Prefijo global
-  app.setGlobalPrefix('api/v1');
+  app.setGlobalPrefix('v1');
 
   // Configuración de Swagger
   const config = new DocumentBuilder()
