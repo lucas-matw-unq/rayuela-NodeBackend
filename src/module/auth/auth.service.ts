@@ -132,10 +132,8 @@ export class AuthService {
     const resetToken = uuidv4();
     await this.usersService.saveResetToken(user.id, resetToken);
 
-    const host =
-      process.env.NODE_ENV === 'production'
-        ? 'https://rayuela-frontend.vercel.app'
-        : 'http://localhost:5173';
+    const host = process.env.FRONTEND_URL;
+
     const resetLink = `${host}/reset-password?token=${resetToken}`;
     const mailOptions = {
       from: 'noreply@rayuela.com', // Dirección de correo del remitente
