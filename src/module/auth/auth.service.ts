@@ -87,10 +87,7 @@ export class AuthService {
     registerDto: RegisterUserDTO,
   ) {
     // Envía el correo de verificación
-    const host =
-      process.env.NODE_ENV === 'production'
-        ? 'https://rayuela-frontend.vercel.app'
-        : 'http://localhost:5173';
+    const host = process.env.FRONTEND_URL;
     const verificationLink = `${host}/verify-email?token=${verificationToken}`;
     const mailOptions = {
       from: 'noreply@rayuela.com',
