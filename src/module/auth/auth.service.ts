@@ -97,7 +97,7 @@ export class AuthService {
     };
 
     try {
-      await this.transporter.sendMail(mailOptions);
+      this.transporter.sendMail(mailOptions);
       console.log('Correo de verificación enviado con éxito');
     } catch (error) {
       console.error('Error al enviar el correo de verificación:', error);
@@ -143,7 +143,7 @@ export class AuthService {
     };
 
     try {
-      await this.transporter.sendMail(mailOptions);
+      this.transporter.sendMail(mailOptions);
       console.log('Correo enviado con éxito');
     } catch (error) {
       console.error('Error al enviar el correo:', error);
