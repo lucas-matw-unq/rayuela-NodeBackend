@@ -12,8 +12,9 @@ export class GeoUtils {
     const mapPoint = point([longitude, latitude]);
 
     // Verificar si el punto está dentro del polígono
-    return booleanPointInPolygon(mapPoint, polygonGeoJSON as Polygon, {
+    const res = booleanPointInPolygon(mapPoint, polygonGeoJSON as Polygon, {
       ignoreBoundary: false,
     });
+    return res;
   }
 }
