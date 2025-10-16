@@ -76,34 +76,19 @@ export class Task {
   }
 
   private isValidTimeRestriction(date: Date): boolean {
-    const isValid = this.#timeInterval.satisfy(date);
-    !isValid &&
-      console.log(
-        `[VALIDATION] Date ${date} is not valid for restriction: ${JSON.stringify(this.#timeInterval)}`,
-      );
-    return isValid;
+    return this.#timeInterval.satisfy(date);
   }
 
   private isSameProject(checkin: Checkin) {
-    const isValid = checkin.projectId === this.#projectId;
-    !isValid &&
-      console.log(
-        `[VALIDATION] Projects mismatch between ${checkin.projectId} and ${this.#projectId}`,
-      );
-    return isValid;
+    return checkin.projectId === this.#projectId;
   }
 
   private isValidArea(checkin: Checkin) {
-    const isValid = GeoUtils.isPointInPolygon(
+    return GeoUtils.isPointInPolygon(
       parseFloat(checkin.longitude),
       parseFloat(checkin.latitude),
       this.#areaGeoJSON.geometry,
     );
-    !isValid &&
-      console.log(
-        `[VALIDATION] Point out of area ${checkin.latitude} ${checkin.longitude} and ${JSON.stringify(this.#areaGeoJSON.geometry)}`,
-      );
-    return isValid;
   }
 
   private isSameTaskType(checkin: Checkin) {
