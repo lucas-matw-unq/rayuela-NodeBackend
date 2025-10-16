@@ -16,6 +16,7 @@ export class CreateProjectDto {
   image: string;
   web?: string;
   available: boolean;
+  manualLocation: boolean;
   areas: FeatureCollection;
   taskTypes: string[];
   timeIntervals: TimeInterval[];

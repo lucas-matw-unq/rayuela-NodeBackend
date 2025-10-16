@@ -98,6 +98,7 @@ export class ProjectController {
           'https://img.freepik.com/vector-gratis/paisaje-lago-diseno-plano_52683-76609.jpg',
         web: 'https://www.unq.edu.ar/',
         available: true,
+        manualLocation: true,
         areas: {
           type: 'FeatureCollection',
           features: [
@@ -1240,6 +1241,7 @@ export class ProjectController {
           'https://img.freepik.com/vector-gratis/paisaje-lago-diseno-plano_52683-76609.jpg',
         web: 'https://www.unq.edu.ar/',
         available: true,
+        manualLocation: true,
         areas: {
           type: 'FeatureCollection',
           features: [
@@ -2382,6 +2384,7 @@ export class ProjectController {
           'https://img.freepik.com/vector-gratis/paisaje-lago-diseno-plano_52683-76609.jpg',
         web: 'https://www.unq.edu.ar/',
         available: true,
+        manualLocation: true,
         areas: {
           type: 'FeatureCollection',
           features: [
@@ -3524,6 +3527,7 @@ export class ProjectController {
           'https://img.freepik.com/vector-gratis/paisaje-lago-diseno-plano_52683-76609.jpg',
         web: 'https://www.unq.edu.ar/',
         available: true,
+        manualLocation: true,
         areas: {
           type: 'FeatureCollection',
           features: [

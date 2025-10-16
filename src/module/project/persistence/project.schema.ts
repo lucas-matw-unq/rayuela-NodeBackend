@@ -25,6 +25,9 @@ export class ProjectTemplate {
   @Prop({ required: true })
   available: boolean;
 
+  @Prop({ required: true })
+  manualLocation: boolean;
+
   @Prop({ type: MongooseSchema.Types.Mixed, default: {} }) // Permite cualquier tipo
   areas: any;
 

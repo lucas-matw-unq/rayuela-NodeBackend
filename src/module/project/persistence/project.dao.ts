@@ -55,6 +55,7 @@ export class ProjectDao {
       gamification,
       project.gamificationStrategy as GamificationStrategy,
       project.recomemendationStrategy as RecommendationStrategy,
+      project.manualLocation,
     );
   }
 

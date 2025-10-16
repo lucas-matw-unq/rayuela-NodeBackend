@@ -21,6 +21,7 @@ export class ProjectMapper {
       null,
       template.gamificationStrategy as GamificationStrategy,
       template.recomemendationStrategy as RecommendationStrategy,
+      template.manualLocation,
     );
   }
 
@@ -35,6 +36,7 @@ export class ProjectMapper {
       taskTypes: entity.taskTypes,
       timeIntervals: entity.timeIntervals,
       ownerId: entity.ownerId,
+      manualLocation: entity.manualLocation,
     };
   }
 }

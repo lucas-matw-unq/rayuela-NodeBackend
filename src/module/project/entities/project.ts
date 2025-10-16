@@ -21,6 +21,7 @@ export class Project {
     gamification: Gamification,
     gamificationStrategy: GamificationStrategy,
     recommendationStrategy: RecommendationStrategy,
+    manualLocation: boolean,
   ) {
     this.id = id;
     this.name = name;
@@ -35,6 +36,7 @@ export class Project {
     this.gamification = gamification;
     this.gamificationStrategy = gamificationStrategy;
     this.recommendationStrategy = recommendationStrategy;
+    this.manualLocation = manualLocation;
   }
 
   id: string;
@@ -50,4 +52,5 @@ export class Project {
   gamification: Gamification;
   gamificationStrategy: GamificationStrategy;
   recommendationStrategy: RecommendationStrategy;
+  manualLocation: boolean;
 }
