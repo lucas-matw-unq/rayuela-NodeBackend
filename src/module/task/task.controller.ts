@@ -33,6 +33,13 @@ export class TaskController {
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.Admin)
+  @Delete('/project/:id/useless')
+  removeUselessFromProject(@Param('id') projectId: string) {
+    return this.taskService.removeUselessFrom(projectId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.Admin)
   @Post()
   create(@Body() createTaskDto: CreateTaskDto) {
     return this.taskService.create(CreateTaskDto.fromDTO(createTaskDto));

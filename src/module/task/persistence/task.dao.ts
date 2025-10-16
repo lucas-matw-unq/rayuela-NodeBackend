@@ -6,7 +6,6 @@ import { Task } from '../entities/task.entity';
 import { CreateTaskDto } from '../dto/create-task.dto';
 import { ProjectDao } from '../../project/persistence/project.dao';
 import { TimeInterval } from '../entities/time-restriction.entity';
-import { ProjectTemplate } from '../../project/persistence/project.schema';
 import { Project } from '../../project/entities/project';
 
 @Injectable()
@@ -134,5 +133,26 @@ export class TaskDao {
     }
 
     return updatedTask;
+  }
+
+  async deleteUseless(project: Project): Promise<number> {
+    const validTaskTypes = project.taskTypes;
+    const validTimeIntervals = project.timeIntervals.map((ti) => ti.name);
+    const validAreaIds = project.areas.features.map((f) =>
+      f.properties.id?.toString(),
+    );
+
+    const result = await this.taskModel
+      .deleteMany({
+        projectId: project.id,
+        $or: [
+          { type: { $nin: validTaskTypes } },
+          { timeIntervalId: { $nin: validTimeIntervals } },
+          { areaId: { $nin: validAreaIds } },
+        ],
+      })
+      .exec();
+
+    return result.deletedCount;
   }
 }

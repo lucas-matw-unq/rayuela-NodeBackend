@@ -63,7 +63,8 @@ export class ProjectService {
     id: string,
     updateProjectDto: UpdateProjectDto,
   ): Promise<ProjectTemplate> {
-    return this.projectDao.update(id, updateProjectDto);
+    const p = this.projectDao.update(id, updateProjectDto);
+    return p;
   }
 
   async toggleAvailable(id: string): Promise<void> {

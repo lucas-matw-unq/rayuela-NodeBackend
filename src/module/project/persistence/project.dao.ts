@@ -73,13 +73,15 @@ export class ProjectDao {
     updateProjectDto: UpdateProjectDto,
   ): Promise<ProjectTemplate & { _id: string }> {
     const oldProject = await this.projectModel.findById(id);
-    updateProjectDto.areas = {
-      type: 'FeatureCollection',
-      features: this.getNewFeaturesFor(
-        oldProject.areas.features,
-        updateProjectDto.areas.features,
-      ),
-    };
+    if (updateProjectDto.areas) {
+      updateProjectDto.areas = {
+        type: 'FeatureCollection',
+        features: this.getNewFeaturesFor(
+          oldProject.areas.features,
+          updateProjectDto.areas.features,
+        ),
+      };
+    }
     if (!oldProject) {
       throw new NotFoundException('Project not found');
     }

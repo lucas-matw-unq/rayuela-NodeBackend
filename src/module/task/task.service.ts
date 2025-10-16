@@ -9,7 +9,6 @@ import { TaskDao } from './persistence/task.dao';
 import { Task } from './entities/task.entity';
 import { ProjectService } from '../project/project.service';
 import { BasicPointsEngine } from '../gamification/entities/engine/gamification/basic-points-engine';
-import { AdaptiveRecommendationEngine } from '../gamification/entities/engine/recommendation/adaptive-recommendation-engine';
 import { UserService } from '../auth/users/user.service';
 import { RecommendationEngineFactory } from '../gamification/entities/engine/recommendation/recommendation-engine-factory';
 
@@ -76,12 +75,16 @@ export class TaskService {
   }
 
   async bulkSave(projectId: string, createTaskDtoList: CreateTaskDto[]) {
-    const count = await this.taskDao.deleteByProjectId(projectId);
-    console.log(count + ' tasks deleted');
+    await this.taskDao.deleteByProjectId(projectId);
     return await this.taskDao.bulkSave(createTaskDtoList);
   }
 
   async setTaskAsSolved(id: string) {
     return await this.taskDao.setTaskAsSolved(id);
+  }
+
+  async removeUselessFrom(projectId: string) {
+    const p = await this.projectService.findOne(projectId);
+    return await this.taskDao.deleteUseless(p);
   }
 }
