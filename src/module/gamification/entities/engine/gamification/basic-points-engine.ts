@@ -53,7 +53,9 @@ export class BasicPointsEngine implements PointsEngine {
     const matchTime =
       ti?.satisfy(checkin.date) || r.timeIntervalId === 'Cualquiera';
 
-    return matchType && matchArea && matchTime;
+    const contributes = r.mustContribute ? checkin.contributesTo : true;
+
+    return matchType && matchArea && matchTime && contributes;
   }
 
   private findArea(areas: FeatureCollection, areaId: string) {

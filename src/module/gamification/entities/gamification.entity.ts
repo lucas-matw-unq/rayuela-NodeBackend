@@ -57,13 +57,16 @@ export class BadgeRule {
 }
 
 export class PointRule {
+  get mustContribute(): boolean {
+    return this._mustContribute;
+  }
   _id: string;
   projectId: string;
   taskType: string;
   areaId: string;
   timeIntervalId: string;
   score: number;
-  mustContribute: boolean;
+  private _mustContribute: boolean;
 
   constructor(
     id: string,
@@ -80,7 +83,7 @@ export class PointRule {
     this.areaId = areaId;
     this.timeIntervalId = timeIntervalId;
     this.score = score;
-    this.mustContribute = mustContribute;
+    this._mustContribute = mustContribute;
   }
 
   matchTimeInterval(timeIntervalId: string) {
