@@ -73,7 +73,9 @@ export class BasicPointsEngine implements PointsEngine {
 
   calculatePoints(task: Task, project: Project & { user?: UserStatus }) {
     return project.gamification.pointRules.reduce((acc, rule) => {
-      return acc + (rule.matchTask(task) ? rule.score : 0);
+      return (
+        acc + (rule.matchTask(task) && rule.mustContribute ? rule.score : 0)
+      );
     }, 0);
   }
 }
