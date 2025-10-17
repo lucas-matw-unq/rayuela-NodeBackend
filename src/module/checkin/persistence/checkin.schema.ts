@@ -23,7 +23,7 @@ export class CheckInTemplate {
   @Prop({ required: true })
   taskType: string;
 
-  @Prop({ type: String })
+  @Prop({ type: String, default: '' })
   contributesTo: string;
 
   constructor(
