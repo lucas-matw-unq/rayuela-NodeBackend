@@ -50,6 +50,11 @@ export class ProjectController {
     return this.projectService.findOne(id, userId);
   }
 
+  @Get('public/:id')
+  findOnePublic(@Param('id') id: string) {
+    return this.projectService.findOnePublic(id);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.Admin)
   @Patch(':id')

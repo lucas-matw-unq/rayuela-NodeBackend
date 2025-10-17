@@ -96,4 +96,8 @@ export class ProjectService {
     });
     return combinations;
   }
+
+  findOnePublic(id: string) {
+    return this.projectDao.findOne(id);
+  }
 }
