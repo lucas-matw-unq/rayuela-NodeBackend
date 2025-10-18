@@ -38,6 +38,7 @@ export class TaskService {
   async findRawByProjectId(projectId: string, username: string): Promise<any> {
     const allTasks = await this.taskDao.getRawTasksByProject(projectId);
     const user = await this.userService.findByEmailOrUsername('', username);
+    const users = await this.userService.findAllByProjectId(projectId);
     const project = await this.projectService.findOne(projectId);
     const recommendationEngine = this.recommendationFactory.getEngine(
       project.recommendationStrategy,
@@ -50,6 +51,8 @@ export class TaskService {
     );
     return recommendations.map((tr) => ({
       ...tr.task.toJSON(),
+      solvedBy: users.find((u) => u.contributions.includes(tr.task.getId()))
+        ?.username,
       points: new BasicPointsEngine().calculatePoints(tr.task, project),
     }));
   }

@@ -67,6 +67,10 @@ export class CheckInDao {
   }
 
   findByProjectId(userId: string, projectId: string) {
-    return this.checkInModel.find({ projectId, userId }).limit(8).exec();
+    return this.checkInModel
+      .find({ projectId, userId })
+      .sort({ datetime: -1 })
+      .limit(8)
+      .exec();
   }
 }
