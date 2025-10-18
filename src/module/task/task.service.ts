@@ -51,9 +51,11 @@ export class TaskService {
     );
     return recommendations.map((tr) => ({
       ...tr.task.toJSON(),
-      solvedBy: users.find((u) =>
-        u.contributions.map((id) => id.toString()).includes(tr.task.getId()),
-      )?.username,
+      solvedBy: users.find((u) => {
+        return u.contributions
+          .map((id) => id.toString())
+          .includes(tr.task.getId().toString());
+      })?.username,
       points: new BasicPointsEngine().calculatePoints(tr.task, project),
     }));
   }
