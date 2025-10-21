@@ -25,7 +25,7 @@ export class ProjectTemplate {
   @Prop({ required: true })
   available: boolean;
 
-  @Prop({ required: true })
+  @Prop({ required: true, default: false })
   manualLocation: boolean;
 
   @Prop({ type: MongooseSchema.Types.Mixed, default: {} }) // Permite cualquier tipo
