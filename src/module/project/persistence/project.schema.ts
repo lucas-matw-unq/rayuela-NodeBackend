@@ -47,8 +47,8 @@ export class ProjectTemplate {
         name: { type: String, required: true },
         days: { type: [Number], required: true }, // Lista de números para los días (1 a 7)
         time: {
-          start: { type: Number, required: true, min: 0, max: 23 }, // Hora de inicio
-          end: { type: Number, required: true, min: 0, max: 23 }, // Hora de fin
+          start: { type: String, required: true }, // Hora de inicio
+          end: { type: String, required: true }, // Hora de fin
         },
         startDate: { type: Date, required: true },
         endDate: { type: Date, required: true },
