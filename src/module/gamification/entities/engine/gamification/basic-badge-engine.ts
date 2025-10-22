@@ -26,11 +26,10 @@ export class BasicBadgeEngine implements BadgeEngine {
   private ruleMatch(r: BadgeRule, checkin: Checkin, project: Project, u: User) {
     return (
       this.userHasPreviousBadges(r, u) &&
-      (r.mustContribute
-        ? this.matchTaskType(r, checkin, project) &&
-          this.matchTimeInterval(r, checkin, project) &&
-          this.matchArea(r, checkin, project)
-        : true)
+      this.matchTaskType(r, checkin, project) &&
+      this.matchTimeInterval(r, checkin, project) &&
+      this.matchArea(r, checkin, project) &&
+      this.verifyContributes(r, checkin)
     );
   }
 
@@ -87,5 +86,12 @@ export class BasicBadgeEngine implements BadgeEngine {
 
   private userHasPreviousBadges(r: BadgeRule, u: User) {
     return r.previousBadges.every((b) => u.hasBadgeWithName(b));
+  }
+
+  private verifyContributes(r: BadgeRule, checkin: Checkin) {
+    if (r.mustContribute) {
+      return !!checkin.contributesTo;
+    }
+    return true;
   }
 }
