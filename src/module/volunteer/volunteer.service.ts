@@ -51,4 +51,8 @@ export class VolunteerService {
       return a.subscribed === b.subscribed ? 0 : a.subscribed ? -1 : 1;
     });
   }
+
+  findPublicProjects() {
+    return this.projectService.findAll();
+  }
 }

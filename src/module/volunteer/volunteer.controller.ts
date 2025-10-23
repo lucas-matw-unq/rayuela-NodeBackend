@@ -25,4 +25,9 @@ export class VolunteerController {
   findProjects(@Req() req) {
     return this.volunteerService.findProjects(req.user.userId);
   }
+
+  @Get('/public/projects')
+  findPublicProjects(@Req() req) {
+    return this.volunteerService.findPublicProjects();
+  }
 }
