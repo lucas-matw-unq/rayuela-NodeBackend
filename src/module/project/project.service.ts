@@ -47,7 +47,6 @@ export class ProjectService {
           points: gp?.points,
           leaderboard: await this.leaderboardService.getLeaderboardFor(
             project.id,
-            userId,
           ),
         },
       };
