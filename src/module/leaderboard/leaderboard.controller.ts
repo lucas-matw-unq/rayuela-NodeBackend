@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { LeaderboardService } from './leaderboard.service';
 import { JwtAuthGuard } from '../auth/auth.guard';
 
@@ -8,8 +8,7 @@ export class LeaderboardController {
 
   @UseGuards(JwtAuthGuard)
   @Get('/:projectId')
-  leaderboard(@Param('projectId') projectId: string, @Req() req) {
-    const userId = req.user.userId;
-    return this.leaderboardService.getLeaderboardFor(projectId, userId);
+  leaderboard(@Param('projectId') projectId: string) {
+    return this.leaderboardService.getLeaderboardFor(projectId);
   }
 }

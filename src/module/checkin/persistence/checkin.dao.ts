@@ -5,7 +5,6 @@ import { CheckInTemplate, CheckInDocument } from './checkin.schema';
 import { UpdateCheckinDto } from '../dto/update-checkin.dto';
 import { Checkin } from '../entities/checkin.entity';
 import { CheckinMapper } from './CheckinMapper';
-import { UserService } from '../../auth/users/user.service';
 
 @Injectable()
 export class CheckInDao {

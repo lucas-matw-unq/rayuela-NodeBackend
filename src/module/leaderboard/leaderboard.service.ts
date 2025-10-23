@@ -6,10 +6,7 @@ import { Leaderboard } from './persistence/leaderboard-user-schema';
 export class LeaderboardService {
   constructor(private leaderboardDao: LeaderboardDao) {}
 
-  async getLeaderboardFor(
-    projectId: string,
-    userId: string,
-  ): Promise<Leaderboard> {
+  async getLeaderboardFor(projectId: string): Promise<Leaderboard> {
     return this.leaderboardDao.findByProjectId(projectId);
   }
 }

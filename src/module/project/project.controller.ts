@@ -15,7 +15,6 @@ import { RolesGuard } from '../auth/roles.guard';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { ProjectService } from './project.service';
 import { UserService } from '../auth/users/user.service';
-import { TimeInterval } from '../task/entities/time-restriction.entity';
 import { UpdateProjectDto } from './dto/update-project.dto';
 
 @Controller('projects')

@@ -247,8 +247,4 @@ export class User {
       });
     }
   }
-
-  getPointsFromProject(id: string): number {
-    return 5;
-  }
 }
