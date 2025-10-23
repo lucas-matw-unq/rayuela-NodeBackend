@@ -50,8 +50,8 @@ export class ProjectTemplate {
           start: { type: String, required: true }, // Hora de inicio
           end: { type: String, required: true }, // Hora de fin
         },
-        startDate: { type: Date, required: true },
-        endDate: { type: Date, required: true },
+        startDate: { type: String, required: true },
+        endDate: { type: String, required: true },
       },
     ],
   })

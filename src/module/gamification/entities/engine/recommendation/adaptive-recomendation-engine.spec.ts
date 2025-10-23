@@ -248,7 +248,10 @@ function createTask(
     new TimeInterval(
       timeName,
       [1, 2, 3, 4, 5],
-      { start: 6, end: 12 },
+      {
+        start: '06:00:00',
+        end: '12:00:00',
+      },
       new Date('2024-01-01'),
       new Date('2024-12-31'),
     ),

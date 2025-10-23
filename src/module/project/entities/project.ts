@@ -21,7 +21,7 @@ export class Project {
     gamification: Gamification,
     gamificationStrategy: GamificationStrategy,
     recommendationStrategy: RecommendationStrategy,
-    manualLocation: boolean,
+    manualLocation: boolean = false,
   ) {
     this.id = id;
     this.name = name;

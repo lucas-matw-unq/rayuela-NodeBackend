@@ -8,8 +8,8 @@ describe('TaskTimeRestriction', () => {
       '',
       [1, 3, 5],
       {
-        start: 13,
-        end: 19,
+        start: '13:00:00',
+        end: '19:00:00',
       },
       new Date('01/01/2024'),
       new Date('12/31/2024'),
@@ -18,8 +18,8 @@ describe('TaskTimeRestriction', () => {
 
   it('should initialize with correct values', () => {
     expect(taskTimeRestriction.days).toEqual([1, 3, 5]); // Días Lunes, Miércoles y Viernes
-    expect(taskTimeRestriction.time.start).toBe(13); // Hora de inicio 13
-    expect(taskTimeRestriction.time.end).toBe(19); // Hora de fin 19
+    expect(taskTimeRestriction.time.start).toBe('13:00:00'); // Hora de inicio 13
+    expect(taskTimeRestriction.time.end).toBe('19:00:00'); // Hora de fin 19
   });
 
   describe('satisfy method', () => {

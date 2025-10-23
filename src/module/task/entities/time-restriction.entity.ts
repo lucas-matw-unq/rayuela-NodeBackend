@@ -5,8 +5,8 @@ export class TimeInterval {
   endDate: Date;
   time: {
     // Between 00 and 23
-    start: Date;
-    end: Date;
+    start: string; // e.g., "08:00" or "14:30:00"
+    end: string;
   };
 
   satisfy(date: Date | string): boolean {
@@ -14,17 +14,32 @@ export class TimeInterval {
     const dayOfWeek = datetime.getDay() === 0 ? 7 : datetime.getDay();
 
     const isValidDay = this.days.includes(dayOfWeek);
-    const isValidHour = datetime >= this.time.start && datetime < this.time.end;
+
+    const isValidHour = this.isValidHour(datetime);
 
     const isWithinDateRange =
       !this.endDate || (datetime >= this.startDate && datetime <= this.endDate);
     return isValidDay && isValidHour && isWithinDateRange;
   }
 
+  private isValidHour(datetime: Date) {
+    const [startHour, startMinute] = this.time.start.split(':').map(Number);
+    const [endHour, endMinute] = this.time.end.split(':').map(Number);
+    const currentHour = datetime.getHours();
+    const currentMinute = datetime.getMinutes();
+
+    return (
+      (currentHour > startHour ||
+        (currentHour === startHour && currentMinute >= startMinute)) &&
+      (currentHour < endHour ||
+        (currentHour === endHour && currentMinute < endMinute))
+    );
+  }
+
   constructor(
     name: string,
     days: number[],
-    time: { start: Date; end: Date },
+    time: { start: string; end: string },
     startDate: Date,
     endDate: Date,
   ) {
