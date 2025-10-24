@@ -18,7 +18,8 @@ export class TimeInterval {
     const isValidHour = this.isValidHour(datetime);
 
     const isWithinDateRange =
-      !this.endDate || (datetime >= this.startDate && datetime <= this.endDate);
+      datetime >= new Date(this.startDate) &&
+      datetime <= new Date(this.endDate);
     return isValidDay && isValidHour && isWithinDateRange;
   }
 
