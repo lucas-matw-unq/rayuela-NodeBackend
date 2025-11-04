@@ -66,6 +66,9 @@ export class Task {
   }
 
   accept(checkin: Checkin) {
+    if (!this.areaGeoJSON) {
+      return false;
+    }
     const validations = [
       this.isSameTaskType(checkin),
       this.isSameProject(checkin),

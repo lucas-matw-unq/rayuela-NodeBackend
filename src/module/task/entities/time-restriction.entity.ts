@@ -10,6 +10,9 @@ export class TimeInterval {
   };
 
   satisfy(date: Date | string): boolean {
+    if (this.name === 'unavailable') {
+      return false;
+    }
     const datetime = new Date(date);
     const dayOfWeek = datetime.getDay() === 0 ? 7 : datetime.getDay();
 

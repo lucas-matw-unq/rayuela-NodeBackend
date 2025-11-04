@@ -103,7 +103,7 @@ export class PointRule {
   matchTask(task: Task) {
     return (
       this.matchTaskType(task.type) &&
-      this.matchArea(task.areaGeoJSON.properties.id.toString()) &&
+      this.matchArea(task.areaGeoJSON?.properties?.id?.toString()) &&
       this.matchTimeInterval(task.timeInterval.name.toString())
     );
   }

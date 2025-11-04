@@ -71,9 +71,6 @@ export class TaskDao {
     const area = project.areas.features.find(
       (f) => f.properties.id?.toString() === doc.areaId?.toString(),
     );
-    if (!area) {
-      throw new NotFoundException('Area not found');
-    }
     return new Task(
       doc._id,
       doc.name,
@@ -92,11 +89,11 @@ export class TaskDao {
   ): TimeInterval {
     const ti = project.timeIntervals.find((t) => t.name === timeIntervalId);
     return new TimeInterval(
-      ti.name,
-      ti.days,
-      ti.time,
-      ti.startDate,
-      ti.endDate,
+      ti?.name || 'unavailable',
+      ti?.days,
+      ti?.time,
+      ti?.startDate,
+      ti?.endDate,
     );
   }
 
