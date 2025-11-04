@@ -23,6 +23,8 @@ export class GamificationEngineFactory {
     switch (gamificationStrategy) {
       case GamificationStrategy.BASIC:
         return this.basicBadgeEngine;
+      case GamificationStrategy.ELASTIC:
+        return this.basicBadgeEngine;
       default:
         throw new Error(
           `Unknown gamification engine type: ${gamificationStrategy}`,
@@ -48,6 +50,8 @@ export class GamificationEngineFactory {
   ): LeaderboardEngine {
     switch (gamificationStrategy) {
       case GamificationStrategy.BASIC:
+        return this.leaderboardEngine;
+      case GamificationStrategy.ELASTIC:
         return this.leaderboardEngine;
       default:
         throw new Error(
