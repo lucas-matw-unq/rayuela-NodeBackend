@@ -13,16 +13,18 @@ import { GamificationEngineFactory } from './entities/engine/gamification/gamifi
 import { SimpleRecommendationEngine } from './entities/engine/recommendation/simple-recommendation-engine';
 import { AdaptiveRecommendationEngine } from './entities/engine/recommendation/adaptive-recommendation-engine';
 import { ElasticPointsEngine } from './entities/engine/gamification/elastic-points-engine';
-import { BasicLeaderbardEngine } from './entities/engine/gamification/basic-leaderboard-engine';
+import { PointsFirstLBEngine } from './entities/engine/gamification/basic-leaderboard-engine';
 import { BasicPointsEngine } from './entities/engine/gamification/basic-points-engine';
 import { BasicBadgeEngine } from './entities/engine/gamification/basic-badge-engine';
+import { BadgesFirstLBEngine } from './entities/engine/gamification/badge-first-leaderboard-engine';
 
 const engines = [
   GamificationEngineFactory,
   SimpleRecommendationEngine,
   AdaptiveRecommendationEngine,
   ElasticPointsEngine,
-  BasicLeaderbardEngine,
+  PointsFirstLBEngine,
+  BadgesFirstLBEngine,
   BasicPointsEngine,
   BasicBadgeEngine,
 ];

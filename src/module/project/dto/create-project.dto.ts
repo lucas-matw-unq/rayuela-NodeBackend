@@ -5,6 +5,11 @@ export enum GamificationStrategy {
   ELASTIC = 'ELASTICA',
 }
 
+export enum LeaderboardStrategy {
+  POINTS_FIRST = 'PUNTOS PRIMERO',
+  BADGES_FIRST = 'MEDALLAS PRIMERO',
+}
+
 export enum RecommendationStrategy {
   SIMPLE = 'SIMPLE',
   ADAPTIVE = 'ADAPTIVE',

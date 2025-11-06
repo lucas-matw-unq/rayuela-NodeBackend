@@ -22,7 +22,6 @@ export class LeaderboardDao {
         lastUpdated: new Date(),
       });
     }
-    leaderboard.users.sort((a, b) => b.points - a.points);
     return leaderboard;
   }
 
@@ -49,7 +48,6 @@ export class LeaderboardDao {
     projectId: string,
     users: Leaderboard['users'],
   ): Promise<Leaderboard> {
-    users.sort((a, b) => b.points - a.points);
     const leaderboard = await this.leaderboardModel
       .findOneAndUpdate(
         { projectId },

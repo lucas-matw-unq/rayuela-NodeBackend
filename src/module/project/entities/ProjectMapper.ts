@@ -2,6 +2,7 @@ import { ProjectTemplate } from '../persistence/project.schema';
 import { Project } from './project';
 import {
   GamificationStrategy,
+  LeaderboardStrategy,
   RecommendationStrategy,
 } from '../dto/create-project.dto';
 
@@ -20,6 +21,7 @@ export class ProjectMapper {
       template.ownerId,
       null,
       template.gamificationStrategy as GamificationStrategy,
+      template.leaderboardStrategy as LeaderboardStrategy,
       template.recomemendationStrategy as RecommendationStrategy,
       template.manualLocation,
     );

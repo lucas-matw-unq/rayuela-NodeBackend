@@ -82,7 +82,7 @@ export class CheckinService {
       project.gamificationStrategy,
     );
     const leaderboardEngine = this.gamificationFactory.getLeaderboardEngine(
-      project.gamificationStrategy,
+      project.leaderboardStrategy,
     );
     return new GameBuilder()
       .withBadgeEngine(badgeEngine)

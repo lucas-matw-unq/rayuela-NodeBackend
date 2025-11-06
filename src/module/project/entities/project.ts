@@ -3,6 +3,7 @@ import { Gamification } from '../../gamification/entities/gamification.entity';
 import {
   FeatureCollection,
   GamificationStrategy,
+  LeaderboardStrategy,
   RecommendationStrategy,
 } from '../dto/create-project.dto';
 
@@ -20,6 +21,7 @@ export class Project {
     ownerId: string,
     gamification: Gamification,
     gamificationStrategy: GamificationStrategy,
+    leaderboardStrategy: LeaderboardStrategy,
     recommendationStrategy: RecommendationStrategy,
     manualLocation: boolean = false,
   ) {
@@ -37,6 +39,7 @@ export class Project {
     this.gamificationStrategy = gamificationStrategy;
     this.recommendationStrategy = recommendationStrategy;
     this.manualLocation = manualLocation;
+    this.leaderboardStrategy = leaderboardStrategy;
   }
 
   id: string;
@@ -53,4 +56,5 @@ export class Project {
   gamificationStrategy: GamificationStrategy;
   recommendationStrategy: RecommendationStrategy;
   manualLocation: boolean;
+  leaderboardStrategy: LeaderboardStrategy;
 }

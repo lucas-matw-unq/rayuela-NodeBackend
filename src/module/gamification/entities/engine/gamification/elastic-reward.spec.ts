@@ -2,13 +2,14 @@ import { ElasticPointsEngine } from './elastic-points-engine';
 import { Checkin } from '../../../../checkin/entities/checkin.entity';
 import {
   GamificationStrategy,
+  LeaderboardStrategy,
   RecommendationStrategy,
 } from '../../../../project/dto/create-project.dto';
 import { BasicPointsEngine } from './basic-points-engine';
 import { User } from '../../../../auth/users/user.entity';
 import { Project } from '../../../../project/entities/project';
 import { BasicBadgeEngine } from './basic-badge-engine';
-import { BasicLeaderbardEngine } from './basic-leaderboard-engine';
+import { PointsFirstLBEngine } from './basic-leaderboard-engine';
 import { Game } from '../../../../checkin/entities/game.entity';
 
 jest.mock('./basic-points-engine');
@@ -61,6 +62,7 @@ describe('ElasticPointsEngine', () => {
       'user1',
       null,
       GamificationStrategy.ELASTIC,
+      LeaderboardStrategy.POINTS_FIRST,
       RecommendationStrategy.SIMPLE,
     );
 
@@ -68,7 +70,7 @@ describe('ElasticPointsEngine', () => {
       mockProject,
       new ElasticPointsEngine(),
       new BasicBadgeEngine(),
-      new BasicLeaderbardEngine(),
+      new PointsFirstLBEngine(),
       [],
       [user, user2, user3],
     );

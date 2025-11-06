@@ -3,6 +3,7 @@ import { Document, Schema as MongooseSchema } from 'mongoose';
 import { TimeInterval } from '../../task/entities/time-restriction.entity';
 import {
   GamificationStrategy,
+  LeaderboardStrategy,
   RecommendationStrategy,
 } from '../dto/create-project.dto';
 
@@ -39,6 +40,9 @@ export class ProjectTemplate {
 
   @Prop({ default: RecommendationStrategy.SIMPLE })
   recomemendationStrategy: string;
+
+  @Prop({ default: LeaderboardStrategy.POINTS_FIRST })
+  leaderboardStrategy: string;
 
   @Prop({
     required: true,

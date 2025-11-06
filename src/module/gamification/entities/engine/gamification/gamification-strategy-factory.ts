@@ -4,18 +4,23 @@ import {
   LeaderboardEngine,
   PointsEngine,
 } from '../../../../checkin/entities/game.entity';
-import { GamificationStrategy } from '../../../../project/dto/create-project.dto';
+import {
+  GamificationStrategy,
+  LeaderboardStrategy,
+} from '../../../../project/dto/create-project.dto';
 import { BasicPointsEngine } from './basic-points-engine';
 import { ElasticPointsEngine } from './elastic-points-engine';
-import { BasicLeaderbardEngine } from './basic-leaderboard-engine';
+import { PointsFirstLBEngine } from './basic-leaderboard-engine';
 import { BasicBadgeEngine } from './basic-badge-engine';
+import { BadgesFirstLBEngine } from './badge-first-leaderboard-engine';
 
 @Injectable()
 export class GamificationEngineFactory {
   constructor(
     private readonly basicPointEngine: BasicPointsEngine,
     private readonly elasticPointEngine: ElasticPointsEngine,
-    private readonly leaderboardEngine: BasicLeaderbardEngine,
+    private readonly pointsFirstLBEngine: PointsFirstLBEngine,
+    private readonly badgesFirstLBEngine: BadgesFirstLBEngine,
     private readonly basicBadgeEngine: BasicBadgeEngine,
   ) {}
 
@@ -46,16 +51,16 @@ export class GamificationEngineFactory {
   }
 
   getLeaderboardEngine(
-    gamificationStrategy: GamificationStrategy,
+    leaderboardStrategy: LeaderboardStrategy,
   ): LeaderboardEngine {
-    switch (gamificationStrategy) {
-      case GamificationStrategy.BASIC:
-        return this.leaderboardEngine;
-      case GamificationStrategy.ELASTIC:
-        return this.leaderboardEngine;
+    switch (leaderboardStrategy) {
+      case LeaderboardStrategy.POINTS_FIRST:
+        return this.pointsFirstLBEngine;
+      case LeaderboardStrategy.BADGES_FIRST:
+        return this.badgesFirstLBEngine;
       default:
         throw new Error(
-          `Unknown gamification engine type: ${gamificationStrategy}`,
+          `Unknown gamification engine type: ${leaderboardStrategy}`,
         );
     }
   }
