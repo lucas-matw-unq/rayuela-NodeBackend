@@ -22,7 +22,7 @@ export class ProjectMapper {
       null,
       template.gamificationStrategy as GamificationStrategy,
       template.leaderboardStrategy as LeaderboardStrategy,
-      template.recomemendationStrategy as RecommendationStrategy,
+      template.recommendationStrategy as RecommendationStrategy,
       template.manualLocation,
     );
   }

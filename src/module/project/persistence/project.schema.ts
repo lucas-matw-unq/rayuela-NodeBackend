@@ -39,7 +39,7 @@ export class ProjectTemplate {
   gamificationStrategy: string;
 
   @Prop({ default: RecommendationStrategy.SIMPLE })
-  recomemendationStrategy: string;
+  recommendationStrategy: string;
 
   @Prop({ default: LeaderboardStrategy.POINTS_FIRST })
   leaderboardStrategy: string;

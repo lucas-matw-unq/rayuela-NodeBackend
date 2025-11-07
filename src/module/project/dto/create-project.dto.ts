@@ -12,7 +12,7 @@ export enum LeaderboardStrategy {
 
 export enum RecommendationStrategy {
   SIMPLE = 'SIMPLE',
-  ADAPTIVE = 'ADAPTIVE',
+  ADAPTIVE = 'ADAPTATIVO',
 }
 
 export class CreateProjectDto {
@@ -26,7 +26,8 @@ export class CreateProjectDto {
   taskTypes: string[];
   timeIntervals: TimeInterval[];
   ownerId: string;
-  gamificationStrategy?: GamificationStrategy = GamificationStrategy.BASIC;
+  gamificationStrategy?: GamificationStrategy;
+  recommendationStrategy?: RecommendationStrategy;
 }
 
 export interface FeatureCollection {
