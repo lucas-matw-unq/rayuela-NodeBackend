@@ -243,9 +243,6 @@ describe('AuthService', () => {
       user.id = 'user-id';
       mockUserService.findByEmailOrUsername.mockResolvedValue(user);
       (uuidv4 as jest.Mock).mockReturnValue('reset-token');
-      mockTransporter.sendMail.mockImplementation((options, callback) =>
-        callback(null, {}),
-      );
 
       await service.forgotPassword('test@test.com');
 
