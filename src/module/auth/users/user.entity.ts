@@ -15,6 +15,9 @@ export interface UserRating {
 }
 
 export class User {
+  set contributions(value: string[]) {
+    this._contributions = value;
+  }
   set password(value: string) {
     this._password = value;
   }
