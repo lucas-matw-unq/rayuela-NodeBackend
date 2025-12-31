@@ -148,4 +148,38 @@ describe('Task', () => {
       expect(result).toBe(false);
     });
   });
+
+  it('should manage solved state', () => {
+    expect(task.solved).toBe(false);
+    task.setSolved(true);
+    expect(task.solved).toBe(true);
+  });
+
+  it('should test contributesToCheckin', () => {
+    (GeoUtils.isPointInPolygon as jest.Mock).mockReturnValue(true);
+    task.setSolved(false);
+    expect(task.contributesToCheckin(checkin)).toBe(true);
+
+    task.setSolved(true);
+    expect(task.contributesToCheckin(checkin)).toBe(false);
+
+    task.setSolved(false);
+    (GeoUtils.isPointInPolygon as jest.Mock).mockReturnValue(false);
+    expect(task.contributesToCheckin(checkin)).toBe(false);
+  });
+
+  it('should test toJSON and getters', () => {
+    expect(task.timeInterval).toBe(taskTimeRestriction);
+    expect(task.type).toBe('type');
+    expect(task.areaGeoJSON).toBe(area);
+    expect(task.description).toBe('Test Description');
+    expect(task.name).toBe('Test Task');
+    expect(task.getId()).toBe('id');
+    expect(task.toJSON().id).toBe('id');
+  });
+
+  it('should return false in accept if areaGeoJSON is missing', () => {
+    const taskNoArea = new Task('id', 'name', 'desc', 'p', {} as any, null, 'type');
+    expect(taskNoArea.accept(checkin)).toBe(false);
+  });
 });

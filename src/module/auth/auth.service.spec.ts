@@ -150,7 +150,7 @@ describe('AuthService', () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedpassword');
       (uuidv4 as jest.Mock).mockReturnValue('test-token');
       mockUserService.create.mockResolvedValue(null);
-      mockTransporter.sendMail.mockImplementation(() => {
+      mockTransporter.sendMail.mockImplementationOnce(() => {
         throw new Error('Mail error');
       });
 
@@ -277,16 +277,26 @@ describe('AuthService', () => {
       user.id = 'user-id';
       mockUserService.findByEmailOrUsername.mockResolvedValue(user);
       (uuidv4 as jest.Mock).mockReturnValue('reset-token');
-      mockTransporter.sendMail.mockImplementation(() => {
+      mockTransporter.sendMail.mockImplementationOnce(() => {
         throw new Error('Mail error');
       });
       const consoleErrorSpy = jest
         .spyOn(console, 'error')
-        .mockImplementation(() => {});
+        .mockImplementation(() => { });
 
       await service.forgotPassword('test@test.com');
       expect(consoleErrorSpy).toHaveBeenCalled();
       consoleErrorSpy.mockRestore();
+    });
+
+    it('should log success message', async () => {
+      const user = new User('T', 'u', 'test@test.com', 'p');
+      mockUserService.findByEmailOrUsername.mockResolvedValue(user);
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
+      mockTransporter.sendMail.mockResolvedValueOnce(undefined);
+      await service.forgotPassword('test@test.com');
+      expect(logSpy).toHaveBeenCalledWith('Correo enviado con éxito');
+      logSpy.mockRestore();
     });
   });
 

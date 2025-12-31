@@ -32,6 +32,29 @@ describe('AdaptiveRecommendationEngine', () => {
     expect(recommendationEngine).toBeDefined();
   });
 
+  it('should use default values if env vars are missing', () => {
+    const originalK = process.env.K;
+    const originalNeutral = process.env.NEUTRAL_SCORE;
+    const originalLimit = process.env.RECOMMENDATIONS_LIMIT;
+    const originalMaxStars = process.env.MAX_STARS_AMOUNT;
+
+    delete process.env.K;
+    delete process.env.NEUTRAL_SCORE;
+    delete process.env.RECOMMENDATIONS_LIMIT;
+    delete process.env.MAX_STARS_AMOUNT;
+
+    const engine = new AdaptiveRecommendationEngine();
+    expect(engine['k']).toBe(5);
+    expect(engine['NEUTRAL_SCORE']).toBe(4);
+    expect(engine['RECOMMENDATIONS_LIMIT']).toBe(10);
+    expect(engine['MAX_STARS_AMOUNT']).toBe(5);
+
+    if (originalK) process.env.K = originalK;
+    if (originalNeutral) process.env.NEUTRAL_SCORE = originalNeutral;
+    if (originalLimit) process.env.RECOMMENDATIONS_LIMIT = originalLimit;
+    if (originalMaxStars) process.env.MAX_STARS_AMOUNT = originalMaxStars;
+  });
+
   /*
    * Task similarity tests
    */
@@ -136,6 +159,12 @@ describe('AdaptiveRecommendationEngine', () => {
 
       expect(estimatedRating).toBeGreaterThanOrEqual(0);
       expect(estimatedRating).toBeLessThanOrEqual(1);
+    });
+
+    it('should use neutral score if rating is missing for a similar task', () => {
+      const similarTasks = [{ task: createTask('task1', 'a', 'm', 't'), similarity: 1 }];
+      const estimatedRating = recommendationEngine['estimateTaskRating'](similarTasks, {});
+      expect(estimatedRating).toBe(0.8);
     });
   });
 

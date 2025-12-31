@@ -185,6 +185,44 @@ describe('CheckinService', () => {
       expect(result).toHaveProperty('id', 'checkin1');
       expect(result.contributesTo).toBe(undefined);
     });
+
+    it('should add badges to user if game results in new badges', async () => {
+      const createCheckinDto: CreateCheckinDto = {
+        datetime: new Date(),
+        taskType: 'type',
+        userId: 'user1',
+        projectId: 'project1',
+        latitude: '0',
+        longitude: '0',
+      };
+
+      const project = ProjectBuilder.build();
+      const task = TaskBuilder.build();
+      const user = new User('t@t.com', 'u', 'p', 'T');
+      user.id = 'user1';
+      user.addBadgeFromProject = jest.fn();
+      user.addProject(project.id); // Ensure game profile exists
+
+      mockTaskService.findByProjectId.mockResolvedValue([task]);
+      mockUserService.getByUserId.mockResolvedValue(user);
+      mockUserService.findAllByProjectId.mockResolvedValue([user]);
+      mockProjectService.findOne.mockResolvedValue(project);
+      mockCheckInDao.create.mockResolvedValue({ _id: 'checkin1' });
+
+      // Mock badge engine to return a new badge
+      mockGamificationFactory.getBadgeEngine.mockReturnValue({
+        newBadgesFor: jest.fn().mockReturnValue([{ name: 'New Badge' }]),
+      });
+
+      await service.create(createCheckinDto);
+
+      expect(user.addBadgeFromProject).toHaveBeenCalledWith(['New Badge'], 'project1');
+
+      // Reset mock for other tests
+      mockGamificationFactory.getBadgeEngine.mockReturnValue({
+        newBadgesFor: jest.fn().mockReturnValue([]),
+      });
+    });
   });
 
   describe('findAll', () => {

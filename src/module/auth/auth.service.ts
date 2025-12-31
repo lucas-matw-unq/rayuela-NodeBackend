@@ -143,7 +143,7 @@ export class AuthService {
     };
 
     try {
-      this.transporter.sendMail(mailOptions);
+      await this.transporter.sendMail(mailOptions);
       console.log('Correo enviado con éxito');
     } catch (error) {
       console.error('Error al enviar el correo:', error);
