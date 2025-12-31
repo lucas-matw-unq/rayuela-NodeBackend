@@ -5,26 +5,28 @@ import { SimpleRecommendationEngine } from './simple-recommendation-engine';
 import { RecommendationStrategy } from '../../../../project/dto/create-project.dto';
 
 describe('RecommendationEngineFactory', () => {
-    let factory: RecommendationEngineFactory;
+  let factory: RecommendationEngineFactory;
 
-    beforeEach(async () => {
-        const module: TestingModule = await Test.createTestingModule({
-            providers: [
-                RecommendationEngineFactory,
-                { provide: AdaptiveRecommendationEngine, useValue: {} },
-                { provide: SimpleRecommendationEngine, useValue: {} },
-            ],
-        }).compile();
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        RecommendationEngineFactory,
+        { provide: AdaptiveRecommendationEngine, useValue: {} },
+        { provide: SimpleRecommendationEngine, useValue: {} },
+      ],
+    }).compile();
 
-        factory = module.get<RecommendationEngineFactory>(RecommendationEngineFactory);
-    });
+    factory = module.get<RecommendationEngineFactory>(
+      RecommendationEngineFactory,
+    );
+  });
 
-    it('should return correct engines', () => {
-        expect(factory.getEngine(RecommendationStrategy.ADAPTIVE)).toBeDefined();
-        expect(factory.getEngine(RecommendationStrategy.SIMPLE)).toBeDefined();
-    });
+  it('should return correct engines', () => {
+    expect(factory.getEngine(RecommendationStrategy.ADAPTIVE)).toBeDefined();
+    expect(factory.getEngine(RecommendationStrategy.SIMPLE)).toBeDefined();
+  });
 
-    it('should throw for unknown strategy', () => {
-        expect(() => factory.getEngine('UNKNOWN')).toThrow();
-    });
+  it('should throw for unknown strategy', () => {
+    expect(() => factory.getEngine('UNKNOWN')).toThrow();
+  });
 });

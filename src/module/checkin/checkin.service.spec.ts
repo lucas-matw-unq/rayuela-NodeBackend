@@ -216,7 +216,10 @@ describe('CheckinService', () => {
 
       await service.create(createCheckinDto);
 
-      expect(user.addBadgeFromProject).toHaveBeenCalledWith(['New Badge'], 'project1');
+      expect(user.addBadgeFromProject).toHaveBeenCalledWith(
+        ['New Badge'],
+        'project1',
+      );
 
       // Reset mock for other tests
       mockGamificationFactory.getBadgeEngine.mockReturnValue({

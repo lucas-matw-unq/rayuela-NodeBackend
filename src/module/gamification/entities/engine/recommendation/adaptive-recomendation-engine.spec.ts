@@ -162,8 +162,13 @@ describe('AdaptiveRecommendationEngine', () => {
     });
 
     it('should use neutral score if rating is missing for a similar task', () => {
-      const similarTasks = [{ task: createTask('task1', 'a', 'm', 't'), similarity: 1 }];
-      const estimatedRating = recommendationEngine['estimateTaskRating'](similarTasks, {});
+      const similarTasks = [
+        { task: createTask('task1', 'a', 'm', 't'), similarity: 1 },
+      ];
+      const estimatedRating = recommendationEngine['estimateTaskRating'](
+        similarTasks,
+        {},
+      );
       expect(estimatedRating).toBe(0.8);
     });
   });

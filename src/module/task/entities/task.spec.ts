@@ -179,7 +179,15 @@ describe('Task', () => {
   });
 
   it('should return false in accept if areaGeoJSON is missing', () => {
-    const taskNoArea = new Task('id', 'name', 'desc', 'p', {} as any, null, 'type');
+    const taskNoArea = new Task(
+      'id',
+      'name',
+      'desc',
+      'p',
+      {} as any,
+      null,
+      'type',
+    );
     expect(taskNoArea.accept(checkin)).toBe(false);
   });
 });
