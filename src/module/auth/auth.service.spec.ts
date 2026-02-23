@@ -5,13 +5,13 @@ import { JwtService } from '@nestjs/jwt';
 import { BadRequestException } from '@nestjs/common';
 import { User } from './users/user.entity';
 import { UserRole } from './users/user.schema';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import * as nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 import { RegisterUserDTO } from './auth.controller';
 
 // Mock de dependencias externas
-jest.mock('bcrypt');
+jest.mock('bcryptjs');
 jest.mock('uuid');
 jest.mock('nodemailer');
 
@@ -282,7 +282,7 @@ describe('AuthService', () => {
       });
       const consoleErrorSpy = jest
         .spyOn(console, 'error')
-        .mockImplementation(() => {});
+        .mockImplementation(() => { });
 
       await service.forgotPassword('test@test.com');
       expect(consoleErrorSpy).toHaveBeenCalled();
@@ -292,7 +292,7 @@ describe('AuthService', () => {
     it('should log success message', async () => {
       const user = new User('T', 'u', 'test@test.com', 'p');
       mockUserService.findByEmailOrUsername.mockResolvedValue(user);
-      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
       mockTransporter.sendMail.mockResolvedValueOnce(undefined);
       await service.forgotPassword('test@test.com');
       expect(logSpy).toHaveBeenCalledWith('Correo enviado con éxito');
