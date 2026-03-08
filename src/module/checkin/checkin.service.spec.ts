@@ -13,6 +13,7 @@ import { UpdateCheckinDto } from './dto/update-checkin.dto';
 import ProjectBuilder from '../project/project.builder';
 import TaskBuilder from '../task/task.builder';
 import CheckinBuilder from './checkin.builder';
+import { StorageService } from '../storage/storage.service';
 
 const mockCheckInDao = {
   create: jest.fn(),
@@ -21,6 +22,10 @@ const mockCheckInDao = {
   update: jest.fn(),
   remove: jest.fn(),
   findByProjectId: jest.fn(),
+};
+
+const mockStorageService = {
+  uploadFile: jest.fn().mockResolvedValue('image-ref'),
 };
 
 const mockMoveDao = {
@@ -72,6 +77,7 @@ describe('CheckinService', () => {
         { provide: UserService, useValue: mockUserService },
         { provide: ProjectService, useValue: mockProjectService },
         { provide: GamificationService, useValue: mockGamificationService },
+        { provide: StorageService, useValue: mockStorageService },
         {
           provide: GamificationEngineFactory,
           useValue: mockGamificationFactory,
@@ -121,13 +127,19 @@ describe('CheckinService', () => {
       mockProjectService.findOne.mockResolvedValue(project);
       mockCheckInDao.create.mockResolvedValue({ _id: 'checkin1' });
 
-      const result = await service.create(createCheckinDto);
+      const file = {
+        originalname: 'test.jpg',
+        buffer: Buffer.from('test'),
+        mimetype: 'image/jpeg',
+      } as any;
+      const result = await service.create(createCheckinDto, file);
 
       expect(mockTaskService.findByProjectId).toHaveBeenCalledWith('project1');
       expect(mockUserService.getByUserId).toHaveBeenCalledWith('user1');
       expect(mockProjectService.findOne).toHaveBeenCalledWith('project1');
       expect(mockCheckInDao.create).toHaveBeenCalled();
       expect(mockMoveDao.create).toHaveBeenCalled();
+      expect(mockStorageService.uploadFile).toHaveBeenCalledWith(file, 'checkins');
       expect(task.setSolved).toHaveBeenCalledWith(true);
       expect(user.addContribution).toHaveBeenCalledWith('task1');
       expect(mockTaskService.setTaskAsSolved).toHaveBeenCalledWith('task1');

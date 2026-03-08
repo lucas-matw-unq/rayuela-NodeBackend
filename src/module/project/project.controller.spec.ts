@@ -55,7 +55,8 @@ describe('ProjectController', () => {
 
   it('should call create', async () => {
     const dto = {} as any;
-    await controller.create(dto);
+    const req = { user: { userId: 'u1' } };
+    await controller.create(dto, req);
     expect(service.create).toHaveBeenCalledWith(dto);
   });
 
