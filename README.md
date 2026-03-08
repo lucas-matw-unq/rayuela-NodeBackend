@@ -13,16 +13,21 @@ $ npm install
 
 ## Running the app
 
-```bash
-# development
-$ npm run start
+1. **Start Docker Services** (MongoDB & Garage):
+   ```bash
+   $ docker-compose up -d
+   ```
 
-# watch mode
-$ npm run start:dev
+2. **Initialize Garage** (First time only):
+   ```bash
+   $ bash ../init-garage.sh
+   ```
 
-# production mode
-$ npm run start:prod
-```
+3. **Start Backend**:
+   ```bash
+   # watch mode
+   $ npm run start:dev
+   ```
 
 ## Test
 

@@ -38,7 +38,8 @@ export class ProjectController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.Admin)
   @Post()
-  create(@Body() createProjectDto: CreateProjectDto) {
+  create(@Body() createProjectDto: CreateProjectDto, @Req() req) {
+    createProjectDto.ownerId = req.user.userId;
     return this.projectService.create(createProjectDto);
   }
 

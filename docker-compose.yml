@@ -4,18 +4,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # Agrega este comando para iniciar en modo desarrollo
     command: npm run start:dev
     ports:
-      - '3000:3000'   # El puerto por defecto de NestJS es 3000
+      - '3000:3000'
       - '9229:9229'
     environment:
       - NODE_ENV=development
+      - DB_CONNECTION=mongodb://root:root@mongodb:27017
+      - S3_ENDPOINT=http://garage:3900
+      - S3_ACCESS_KEY=GKeb4b3ddceb7b51753a68f6ea
+      - S3_SECRET_KEY=65cbf335e26752e15e0d3d88c3479d273b7355af1e8102007e7b27e4a0475150
+      - S3_BUCKET=rayuela-checkins
+      - S3_REGION=garage
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
       - mongodb
+      - garage
     networks:
       - rayuela_net
   mongodb:
@@ -30,8 +36,23 @@ services:
       - mongodb_data:/data/db
     networks:
       - rayuela_net
+  garage:
+    image: dxflrs/garage:v2.2.0
+    container_name: garage
+    ports:
+      - "3900:3900" # S3 API
+      - "3901:3901" # RPC
+      - "3902:3902" # Web
+      - "3903:3903" # Admin API
+    volumes:
+      - ./garage.toml:/etc/garage.toml
+      - garage_data:/data
+    networks:
+      - rayuela_net
+
 volumes:
   mongodb_data:
+  garage_data:
 
 networks:
   rayuela_net:

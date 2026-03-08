@@ -5,6 +5,7 @@ export class CreateCheckinDto {
   projectId: string;
   userId: string;
   taskType: string;
+  imageRef?: string;
 
   constructor({
     datetime,
@@ -13,6 +14,7 @@ export class CreateCheckinDto {
     userId,
     longitude,
     taskType,
+    imageRef,
   }: CreateCheckinDto) {
     this.datetime = datetime;
     this.latitude = latitude;
@@ -20,5 +22,7 @@ export class CreateCheckinDto {
     this.userId = userId;
     this.projectId = projectId;
     this.taskType = taskType;
+    this.imageRef = imageRef;
   }
+
 }

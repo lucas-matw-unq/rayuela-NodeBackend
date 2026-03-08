@@ -17,6 +17,7 @@ export class CheckinMapper {
       checkin.user.id,
       checkin.contributesTo,
       checkin.taskType,
+      checkin.imageRef,
     );
   }
 
@@ -36,6 +37,8 @@ export class CheckinMapper {
       user,
       template.taskType, // taskType (valor por defecto o asignar otro si lo tienes disponible)
       template._id, // id (valor por defecto o asignar el id si está disponible en otro campo)
+      undefined,
+      template.imageRef,
     );
     // Si el template tiene información de contributesTo, se actualiza en la entidad
     if (template.contributesTo) {
@@ -43,4 +46,5 @@ export class CheckinMapper {
     }
     return checkin;
   }
+
 }
