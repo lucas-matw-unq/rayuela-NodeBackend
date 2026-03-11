@@ -29,15 +29,19 @@ export class CheckinService {
     private readonly storageService: StorageService,
   ) {}
 
-  async create(
-    createCheckinDto: CreateCheckinDto,
-    file?: Express.Multer.File,
-  ) {
+  async create(params: {
+    createCheckinDto: CreateCheckinDto;
+    file?: Express.Multer.File;
+  }) {
+    const { createCheckinDto, file } = params;
     const { tasks, user, users, checkin, project } =
       await this.getDataFromDB(createCheckinDto);
 
     if (file) {
-      const imageRef = await this.storageService.uploadFile(file, 'checkins');
+      const imageRef = await this.storageService.uploadFile(
+        file,
+        `checkins/${createCheckinDto.userId}`,
+      );
       checkin.imageRef = imageRef;
     }
 

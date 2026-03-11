@@ -132,14 +132,17 @@ describe('CheckinService', () => {
         buffer: Buffer.from('test'),
         mimetype: 'image/jpeg',
       } as any;
-      const result = await service.create(createCheckinDto, file);
+      const result = await service.create({ createCheckinDto, file });
 
       expect(mockTaskService.findByProjectId).toHaveBeenCalledWith('project1');
       expect(mockUserService.getByUserId).toHaveBeenCalledWith('user1');
       expect(mockProjectService.findOne).toHaveBeenCalledWith('project1');
       expect(mockCheckInDao.create).toHaveBeenCalled();
       expect(mockMoveDao.create).toHaveBeenCalled();
-      expect(mockStorageService.uploadFile).toHaveBeenCalledWith(file, 'checkins');
+      expect(mockStorageService.uploadFile).toHaveBeenCalledWith(
+        file,
+        'checkins/user1',
+      );
       expect(task.setSolved).toHaveBeenCalledWith(true);
       expect(user.addContribution).toHaveBeenCalledWith('task1');
       expect(mockTaskService.setTaskAsSolved).toHaveBeenCalledWith('task1');
@@ -185,7 +188,7 @@ describe('CheckinService', () => {
       mockProjectService.findOne.mockResolvedValue(project);
       mockCheckInDao.create.mockResolvedValue({ _id: 'checkin1' });
 
-      const result = await service.create(createCheckinDto);
+      const result = await service.create({ createCheckinDto });
 
       expect(mockCheckInDao.create).toHaveBeenCalled();
       expect(mockMoveDao.create).toHaveBeenCalled();
@@ -226,7 +229,7 @@ describe('CheckinService', () => {
         newBadgesFor: jest.fn().mockReturnValue([{ name: 'New Badge' }]),
       });
 
-      await service.create(createCheckinDto);
+      await service.create({ createCheckinDto });
 
       expect(user.addBadgeFromProject).toHaveBeenCalledWith(
         ['New Badge'],

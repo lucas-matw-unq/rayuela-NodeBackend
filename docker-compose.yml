@@ -8,14 +8,11 @@ services:
     ports:
       - '3000:3000'
       - '9229:9229'
+    env_file:
+      - .env
     environment:
-      - NODE_ENV=development
       - DB_CONNECTION=mongodb://root:root@mongodb:27017
       - S3_ENDPOINT=http://garage:3900
-      - S3_ACCESS_KEY=GKeb4b3ddceb7b51753a68f6ea
-      - S3_SECRET_KEY=65cbf335e26752e15e0d3d88c3479d273b7355af1e8102007e7b27e4a0475150
-      - S3_BUCKET=rayuela-checkins
-      - S3_REGION=garage
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
@@ -27,9 +24,8 @@ services:
   mongodb:
     image: mongo:4.4
     container_name: mongodb
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+    env_file:
+      - .env
     ports:
       - "27017:27017"
     volumes:

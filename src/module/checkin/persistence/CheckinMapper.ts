@@ -35,11 +35,13 @@ export class CheckinMapper {
       template.datetime,
       template.projectId,
       user,
-      template.taskType, // taskType (valor por defecto o asignar otro si lo tienes disponible)
-      template._id, // id (valor por defecto o asignar el id si está disponible en otro campo)
-      undefined,
-      template.imageRef,
+      template.taskType,
+      template._id,
     );
+
+    if (template.imageRef) {
+      checkin.imageRef = template.imageRef;
+    }
     // Si el template tiene información de contributesTo, se actualiza en la entidad
     if (template.contributesTo) {
       checkin.validateContribution(template.contributesTo);

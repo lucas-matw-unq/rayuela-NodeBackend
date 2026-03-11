@@ -26,22 +26,13 @@ export class CheckinController {
   @UseInterceptors(FileInterceptor('image'))
   async create(
     @Body() createCheckinDto: CreateCheckinDto,
-    @Req() req,
+    @Req() req: any,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    const userId = req.user.userId;
-    return this.checkinService.create(
-      new CreateCheckinDto({
-        latitude: createCheckinDto.latitude,
-        longitude: createCheckinDto.longitude,
-        datetime: createCheckinDto.datetime,
-        projectId: createCheckinDto.projectId,
-        userId: userId,
-        taskType: createCheckinDto.taskType,
-      }),
-      file,
-    );
+    createCheckinDto.userId = req.user.userId;
+    return this.checkinService.create({ createCheckinDto, file });
   }
+
 
 
   @UseGuards(JwtAuthGuard)
