@@ -28,7 +28,6 @@ export class CheckinMapper {
    * @returns Una instancia de Checkin con los datos mapeados
    */
   static toEntity(template: CheckInDocument, user: User): Checkin {
-    // Como el template no tiene taskType ni id, se asignan valores por defecto
     const checkin = new Checkin(
       template.latitude,
       template.longitude,
@@ -37,11 +36,10 @@ export class CheckinMapper {
       user,
       template.taskType,
       template._id,
+      null,
+      template.imageRef,
     );
 
-    if (template.imageRef) {
-      checkin.imageRef = template.imageRef;
-    }
     // Si el template tiene información de contributesTo, se actualiza en la entidad
     if (template.contributesTo) {
       checkin.validateContribution(template.contributesTo);

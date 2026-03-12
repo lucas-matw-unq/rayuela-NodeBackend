@@ -18,11 +18,13 @@ describe('CheckinMapper', () => {
         'id1',
       );
       checkin.contributesTo = 'task1';
+      checkin.imageRef = 'image-ref-123';
       const template = CheckinMapper.toTemplate(checkin);
       expect(template.latitude).toBe('1');
       expect(template.longitude).toBe('2');
       expect(template.userId).toBe('user1');
       expect(template.contributesTo).toBe('task1');
+      expect(template.imageRef).toBe('image-ref-123');
     });
   });
 
@@ -37,12 +39,14 @@ describe('CheckinMapper', () => {
         taskType: 'type',
         _id: 'id1',
         contributesTo: 'task1',
+        imageRef: 'image-ref-123',
       } as any;
       const entity = CheckinMapper.toEntity(template, user);
       expect(entity.latitude).toBe('1');
       expect(entity.longitude).toBe('2');
       expect(entity.id).toBe('id1');
       expect(entity.contributesTo).toBe('task1');
+      expect(entity.imageRef).toBe('image-ref-123');
     });
 
     it('should map template to checkin entity without contribution', () => {

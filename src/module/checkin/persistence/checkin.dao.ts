@@ -28,7 +28,7 @@ export class CheckInDao {
   }
 
   async create(checkin: Checkin): Promise<CheckInTemplate> {
-    const checkinDB = this.mapCheckinDB(checkin);
+    const checkinDB = CheckinMapper.toTemplate(checkin);
     const checkIn = new this.checkInModel(checkinDB);
     return checkIn.save();
   }
@@ -51,18 +51,6 @@ export class CheckInDao {
     if (!result) {
       throw new NotFoundException('Check-in not found');
     }
-  }
-
-  private mapCheckinDB(checkin: Checkin): CheckInTemplate {
-    return new CheckInTemplate(
-      checkin.latitude,
-      checkin.longitude,
-      checkin.date,
-      checkin.projectId,
-      checkin.user.id,
-      checkin.contributesTo,
-      checkin.taskType,
-    );
   }
 
   findByProjectId(userId: string, projectId: string) {
