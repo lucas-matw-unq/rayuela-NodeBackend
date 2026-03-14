@@ -17,6 +17,7 @@ export class CheckinMapper {
       checkin.user.id,
       checkin.contributesTo,
       checkin.taskType,
+      checkin.imageRefs,
     );
   }
 
@@ -26,21 +27,30 @@ export class CheckinMapper {
    * @param user Instancia completa del usuario asociado
    * @returns Una instancia de Checkin con los datos mapeados
    */
-  static toEntity(template: CheckInDocument, user: User): Checkin {
-    // Como el template no tiene taskType ni id, se asignan valores por defecto
+  static toEntity(template: any, user: User): Checkin {
+    // Handle migration from imageRef to imageRefs
+    let imageRefs = template.imageRefs || [];
+    if (imageRefs.length === 0 && template.imageRef) {
+      imageRefs = [template.imageRef];
+    }
+
     const checkin = new Checkin(
       template.latitude,
       template.longitude,
       template.datetime,
       template.projectId,
       user,
-      template.taskType, // taskType (valor por defecto o asignar otro si lo tienes disponible)
-      template._id, // id (valor por defecto o asignar el id si está disponible en otro campo)
+      template.taskType,
+      template._id,
+      null,
+      imageRefs,
     );
+
     // Si el template tiene información de contributesTo, se actualiza en la entidad
     if (template.contributesTo) {
       checkin.validateContribution(template.contributesTo);
     }
     return checkin;
   }
+
 }
