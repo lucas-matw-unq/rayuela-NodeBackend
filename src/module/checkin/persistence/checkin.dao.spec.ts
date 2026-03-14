@@ -87,11 +87,11 @@ describe('CheckInDao', () => {
       user: { id: 'u1' },
       contributesTo: '',
       taskType: 'T',
-      imageRef: 'image-ref-123',
+      imageRefs: ['image-ref-123', 'image-ref-456'],
     } as any;
     const res = await dao.create(checkin);
     expect(res).toBeDefined();
-    expect(res.imageRef).toBe('image-ref-123');
+    expect(res.imageRefs).toEqual(['image-ref-123', 'image-ref-456']);
   });
 
   it('should update', async () => {

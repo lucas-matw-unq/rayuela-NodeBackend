@@ -31,18 +31,21 @@ export class CheckinService {
 
   async create(params: {
     createCheckinDto: CreateCheckinDto;
-    file?: Express.Multer.File;
+    files?: Express.Multer.File[];
   }) {
-    const { createCheckinDto, file } = params;
+    const { createCheckinDto, files } = params;
     const { tasks, user, users, checkin, project } =
       await this.getDataFromDB(createCheckinDto);
 
-    if (file) {
-      const imageRef = await this.storageService.uploadFile(
-        file,
-        `checkins/${createCheckinDto.userId}`,
+    if (files && files.length > 0) {
+      const uploadPromises = files.map((file) =>
+        this.storageService.uploadFile(
+          file,
+          `checkins/${createCheckinDto.userId}`,
+        ),
       );
-      checkin.imageRef = imageRef;
+      const imageRefs = await Promise.all(uploadPromises);
+      checkin.imageRefs = imageRefs;
     }
 
     const game = this.buildGame(tasks, users, project);

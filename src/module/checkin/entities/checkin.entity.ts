@@ -63,12 +63,12 @@ export class Checkin {
     return this.#date;
   }
 
-  get imageRef(): string {
-    return this.#imageRef;
+  get imageRefs(): string[] {
+    return this.#imageRefs;
   }
 
-  set imageRef(value: string) {
-    this.#imageRef = value;
+  set imageRefs(value: string[]) {
+    this.#imageRefs = value;
   }
 
   #latitude: string;
@@ -79,7 +79,7 @@ export class Checkin {
   #contributesTo: string;
   #taskType: string;
   #id: string;
-  #imageRef: string;
+  #imageRefs: string[];
   private _relatedTask: Task;
 
   constructor(
@@ -91,7 +91,7 @@ export class Checkin {
     taskType: string,
     id: string,
     relatedTask?: Task,
-    imageRef?: string,
+    imageRefs?: string[],
   ) {
     this.#latitude = latitude;
     this.#longitude = longitude;
@@ -102,7 +102,7 @@ export class Checkin {
     this._relatedTask = relatedTask;
     this.#contributesTo = '';
     this.#id = id;
-    this.#imageRef = imageRef || '';
+    this.#imageRefs = imageRefs || [];
   }
 
 

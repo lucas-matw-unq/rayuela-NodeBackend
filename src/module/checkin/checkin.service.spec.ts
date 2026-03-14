@@ -94,7 +94,7 @@ describe('CheckinService', () => {
   });
 
   describe('create', () => {
-    it('should create a checkin, play the game, and save the results', async () => {
+    it('should create a checkin with multiple images, play the game, and save the results', async () => {
       const createCheckinDto: CreateCheckinDto = {
         datetime: new Date(),
         taskType: '',
@@ -127,22 +127,34 @@ describe('CheckinService', () => {
       mockProjectService.findOne.mockResolvedValue(project);
       mockCheckInDao.create.mockResolvedValue({ _id: 'checkin1' });
 
-      const file = {
-        originalname: 'test.jpg',
-        buffer: Buffer.from('test'),
-        mimetype: 'image/jpeg',
-      } as any;
-      const result = await service.create({ createCheckinDto, file });
+      const files = [
+        {
+          originalname: 'test1.jpg',
+          buffer: Buffer.from('test1'),
+          mimetype: 'image/jpeg',
+        },
+        {
+          originalname: 'test2.jpg',
+          buffer: Buffer.from('test2'),
+          mimetype: 'image/jpeg',
+        },
+      ] as any[];
+      
+      mockStorageService.uploadFile
+        .mockResolvedValueOnce('ref1')
+        .mockResolvedValueOnce('ref2');
+
+      const result = await service.create({ createCheckinDto, files });
 
       expect(mockTaskService.findByProjectId).toHaveBeenCalledWith('project1');
       expect(mockUserService.getByUserId).toHaveBeenCalledWith('user1');
       expect(mockProjectService.findOne).toHaveBeenCalledWith('project1');
       expect(mockCheckInDao.create).toHaveBeenCalled();
       expect(mockMoveDao.create).toHaveBeenCalled();
-      expect(mockStorageService.uploadFile).toHaveBeenCalledWith(
-        file,
-        'checkins/user1',
-      );
+      expect(mockStorageService.uploadFile).toHaveBeenCalledTimes(2);
+      expect(mockStorageService.uploadFile).toHaveBeenCalledWith(files[0], 'checkins/user1');
+      expect(mockStorageService.uploadFile).toHaveBeenCalledWith(files[1], 'checkins/user1');
+      
       expect(task.setSolved).toHaveBeenCalledWith(true);
       expect(user.addContribution).toHaveBeenCalledWith('task1');
       expect(mockTaskService.setTaskAsSolved).toHaveBeenCalledWith('task1');

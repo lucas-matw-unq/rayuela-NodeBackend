@@ -9,13 +9,13 @@ import {
   UseGuards,
   Req,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
 } from '@nestjs/common';
 import { CheckinService } from './checkin.service';
 import { CreateCheckinDto } from './dto/create-checkin.dto';
 import { UpdateCheckinDto } from './dto/update-checkin.dto';
 import { JwtAuthGuard } from '../auth/auth.guard';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('checkin')
 export class CheckinController {
@@ -23,14 +23,14 @@ export class CheckinController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FilesInterceptor('image', 3))
   async create(
     @Body() createCheckinDto: CreateCheckinDto,
     @Req() req: any,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
     createCheckinDto.userId = req.user.userId;
-    return this.checkinService.create({ createCheckinDto, file });
+    return this.checkinService.create({ createCheckinDto, files });
   }
 
 

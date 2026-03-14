@@ -26,8 +26,8 @@ export class CheckInTemplate {
   @Prop({ type: String, default: '' })
   contributesTo: string;
 
-  @Prop({ type: String, default: '' })
-  imageRef: string;
+  @Prop({ type: [String], default: [] })
+  imageRefs: string[];
 
   constructor(
     latitude: string,
@@ -37,7 +37,7 @@ export class CheckInTemplate {
     userId: string,
     contributesTo: string,
     taskType: string,
-    imageRef?: string,
+    imageRefs?: string[],
   ) {
     this.latitude = latitude;
     this.longitude = longitude;
@@ -46,7 +46,7 @@ export class CheckInTemplate {
     this.userId = userId;
     this.contributesTo = contributesTo;
     this.taskType = taskType;
-    this.imageRef = imageRef || '';
+    this.imageRefs = imageRefs || [];
   }
 
 
