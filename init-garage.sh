@@ -10,9 +10,13 @@ fi
 
 echo "Initializing Garage Cluster with Node ID: $NODE_ID"
 
+# Get current layout version and increment it
+CURRENT_VERSION=$(docker exec garage /garage layout show | grep "Current cluster layout version" | awk '{print $NF}')
+NEXT_VERSION=$((CURRENT_VERSION + 1))
+
 # Assign and Apply layout
 docker exec garage /garage layout assign -z local -c 10G "$NODE_ID"
-docker exec garage /garage layout apply --version 2
+docker exec garage /garage layout apply --version "$NEXT_VERSION"
 
 # Import key (matching .env defaults)
 docker exec garage /garage key import GKeb4b3ddceb7b51753a68f6ea 65cbf335e26752e15e0d3d88c3479d273b7355af1e8102007e7b27e4a0475150 -n rayuela --yes
