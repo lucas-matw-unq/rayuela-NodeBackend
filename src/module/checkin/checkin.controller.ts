@@ -16,6 +16,7 @@ import { CreateCheckinDto } from './dto/create-checkin.dto';
 import { UpdateCheckinDto } from './dto/update-checkin.dto';
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { MAX_IMAGES_PER_CHECKIN } from './checkin.constants';
 
 @Controller('checkin')
 export class CheckinController {
@@ -23,7 +24,7 @@ export class CheckinController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @UseInterceptors(FilesInterceptor('image', 3))
+  @UseInterceptors(FilesInterceptor('image', MAX_IMAGES_PER_CHECKIN))
   async create(
     @Body() createCheckinDto: CreateCheckinDto,
     @Req() req: any,
