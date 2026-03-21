@@ -46,4 +46,20 @@ describe('StorageService', () => {
     expect(result).toContain('.png');
     expect(S3Client.prototype.send).toHaveBeenCalled();
   });
+
+  it('should get a file from S3', async () => {
+    const mockKey = 'test-key';
+    const mockResponse = {
+      Body: 'test-body',
+      ContentType: 'image/png',
+    };
+
+    (S3Client.prototype.send as jest.Mock).mockResolvedValueOnce(mockResponse);
+
+    const result = await service.getFile(mockKey);
+
+    expect(result.body).toBe('test-body');
+    expect(result.contentType).toBe('image/png');
+    expect(S3Client.prototype.send).toHaveBeenCalled();
+  });
 });

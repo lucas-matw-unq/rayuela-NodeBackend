@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -47,6 +47,24 @@ export class StorageService {
       return fileName;
     } catch (error) {
       this.logger.error(`Failed to upload file to S3: ${error.message}`);
+      throw error;
+    }
+  }
+
+  async getFile(key: string): Promise<{ body: any; contentType: string }> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+
+    try {
+      const response = await this.s3Client.send(command);
+      return {
+        body: response.Body,
+        contentType: response.ContentType,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to get file from S3: ${error.message}`);
       throw error;
     }
   }
