@@ -10,6 +10,7 @@ import { CheckinModule } from './module/checkin/checkin.module';
 import { VolunteerModule } from './module/volunteer/volunteer.module';
 import { GamificationModule } from './module/gamification/gamification.module';
 import { LeaderboardModule } from './module/leaderboard/leaderboard.module';
+import { StorageModule } from './module/storage/storage.module';
 
 console.log(process.env.DB_CONNECTION as string);
 @Module({
@@ -26,8 +27,10 @@ console.log(process.env.DB_CONNECTION as string);
     VolunteerModule,
     GamificationModule,
     LeaderboardModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+

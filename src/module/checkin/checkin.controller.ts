@@ -8,11 +8,15 @@ import {
   Delete,
   UseGuards,
   Req,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { CheckinService } from './checkin.service';
 import { CreateCheckinDto } from './dto/create-checkin.dto';
 import { UpdateCheckinDto } from './dto/update-checkin.dto';
 import { JwtAuthGuard } from '../auth/auth.guard';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { MAX_IMAGES_PER_CHECKIN } from './checkin.constants';
 
 @Controller('checkin')
 export class CheckinController {
@@ -20,19 +24,17 @@ export class CheckinController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  async create(@Body() createCheckinDto: CreateCheckinDto, @Req() req) {
-    const userId = req.user.userId;
-    return this.checkinService.create(
-      new CreateCheckinDto({
-        latitude: createCheckinDto.latitude,
-        longitude: createCheckinDto.longitude,
-        datetime: createCheckinDto.datetime,
-        projectId: createCheckinDto.projectId,
-        userId: userId,
-        taskType: createCheckinDto.taskType,
-      }),
-    );
+  @UseInterceptors(FilesInterceptor('image', MAX_IMAGES_PER_CHECKIN))
+  async create(
+    @Body() createCheckinDto: CreateCheckinDto,
+    @Req() req: any,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    createCheckinDto.userId = req.user.userId;
+    return this.checkinService.create({ createCheckinDto, files });
   }
+
+
 
   @UseGuards(JwtAuthGuard)
   @Post('/rate')

@@ -14,6 +14,7 @@ import { GamificationService } from '../gamification/gamification.service';
 import { Project } from '../project/entities/project';
 import { User } from '../auth/users/user.entity';
 import { GamificationEngineFactory } from '../gamification/entities/engine/gamification/gamification-strategy-factory';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class CheckinService {
@@ -25,13 +26,30 @@ export class CheckinService {
     private readonly projectService: ProjectService,
     private readonly gamificationService: GamificationService,
     private readonly gamificationFactory: GamificationEngineFactory,
+    private readonly storageService: StorageService,
   ) {}
 
-  async create(createCheckinDto: CreateCheckinDto) {
+  async create(params: {
+    createCheckinDto: CreateCheckinDto;
+    files?: Express.Multer.File[];
+  }) {
+    const { createCheckinDto, files } = params;
     const { tasks, user, users, checkin, project } =
       await this.getDataFromDB(createCheckinDto);
 
+    if (files && files.length > 0) {
+      const uploadPromises = files.map((file) =>
+        this.storageService.uploadFile(
+          file,
+          `checkins/${createCheckinDto.userId}`,
+        ),
+      );
+      const imageRefs = await Promise.all(uploadPromises);
+      checkin.imageRefs = imageRefs;
+    }
+
     const game = this.buildGame(tasks, users, project);
+
 
     checkin.contributesTo = tasks
       .find((t) => t.contributesToCheckin(checkin))

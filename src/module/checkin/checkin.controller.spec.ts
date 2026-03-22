@@ -36,7 +36,8 @@ describe('CheckinController', () => {
     it('should call service.create', async () => {
       const dto: CreateCheckinDto = { userId: '1', projectId: '1' } as any;
       const req = { user: { userId: '1' } };
-      await controller.create(dto, req);
+      const file = { buffer: Buffer.from('test') } as any;
+      await controller.create(dto, req, file);
       expect(service.create).toHaveBeenCalled();
     });
   });
