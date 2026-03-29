@@ -1,18 +1,16 @@
-# Usar una imagen base de Node.js consistente
-FROM node:20-alpine
-
-# Establecer el directorio de trabajo
+# Stage 1: Build
+FROM node:20-alpine AS build
 WORKDIR /usr/src/app
-
-# Copiar solo los archivos de manifiesto del paquete para aprovechar el caché de Docker
 COPY package*.json ./
-
-# Instalar dependencias (esto se ejecutará dentro del contenedor Alpine)
 RUN npm install
-
-# Copiar el resto del código (esto será sobrescrito por el volumen de docker-compose, pero es buena práctica tenerlo)
 COPY . .
+RUN npm run build
 
-# El comando para iniciar la app en modo de desarrollo (usando ts-node-dev o similar)
-# docker-compose anulará este CMD, pero lo dejamos como referencia.
-CMD ["npm", "run", "start:dev"]
+# Stage 2: Runtime
+FROM node:20-alpine
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm install --only=production
+COPY --from=build /usr/src/app/dist ./dist
+EXPOSE 3000
+CMD ["node", "dist/main"]
