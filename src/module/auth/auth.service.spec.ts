@@ -150,13 +150,25 @@ describe('AuthService', () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedpassword');
       (uuidv4 as jest.Mock).mockReturnValue('test-token');
       mockUserService.create.mockResolvedValue(null);
-      mockTransporter.sendMail.mockImplementationOnce(() => {
-        throw new Error('Mail error');
-      });
+      mockTransporter.sendMail.mockRejectedValueOnce(new Error('SMTP auth error'));
 
       await expect(service.register(registerDto)).rejects.toThrow(
         new BadRequestException('Error al enviar el correo de verificación'),
       );
+    });
+
+    it('should propagate sendMail rejection — not swallow it silently', async () => {
+      mockUserService.findByEmailOrUsername.mockResolvedValue(null);
+      (bcrypt.genSalt as jest.Mock).mockResolvedValue('salt');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedpassword');
+      (uuidv4 as jest.Mock).mockReturnValue('test-token');
+      mockUserService.create.mockResolvedValue(null);
+      mockTransporter.sendMail.mockRejectedValueOnce(new Error('SMTP auth error'));
+
+      const loggerErrorSpy = jest.spyOn(service['logger'], 'error');
+
+      await expect(service.register(registerDto)).rejects.toThrow(BadRequestException);
+      expect(loggerErrorSpy).toHaveBeenCalled();
     });
   });
 
@@ -264,7 +276,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('should handle error when sending email', async () => {
+    it('should not throw when sending email fails — logs error and continues', async () => {
       const user = new User(
         'Test',
         'testuser',
@@ -277,26 +289,26 @@ describe('AuthService', () => {
       user.id = 'user-id';
       mockUserService.findByEmailOrUsername.mockResolvedValue(user);
       (uuidv4 as jest.Mock).mockReturnValue('reset-token');
-      mockTransporter.sendMail.mockImplementationOnce(() => {
-        throw new Error('Mail error');
-      });
-      const consoleErrorSpy = jest
-        .spyOn(console, 'error')
-        .mockImplementation(() => { });
+      mockTransporter.sendMail.mockRejectedValueOnce(new Error('SMTP auth error'));
 
-      await service.forgotPassword('test@test.com');
-      expect(consoleErrorSpy).toHaveBeenCalled();
-      consoleErrorSpy.mockRestore();
+      const loggerErrorSpy = jest.spyOn(service['logger'], 'error');
+
+      await expect(service.forgotPassword('test@test.com')).resolves.toBeUndefined();
+      expect(loggerErrorSpy).toHaveBeenCalled();
     });
 
-    it('should log success message', async () => {
+    it('should log success when email is sent', async () => {
       const user = new User('T', 'u', 'test@test.com', 'p');
+      user.id = 'user-id';
       mockUserService.findByEmailOrUsername.mockResolvedValue(user);
-      const logSpy = jest.spyOn(console, 'log').mockImplementation(() => { });
       mockTransporter.sendMail.mockResolvedValueOnce(undefined);
+
+      const loggerLogSpy = jest.spyOn(service['logger'], 'log');
+
       await service.forgotPassword('test@test.com');
-      expect(logSpy).toHaveBeenCalledWith('Correo enviado con éxito');
-      logSpy.mockRestore();
+      expect(loggerLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('test@test.com'),
+      );
     });
   });
 
