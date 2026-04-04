@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from './users/user.schema';
 import { UserService } from './users/user.service';
@@ -17,6 +17,7 @@ export interface UserJWT {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private transporter;
 
   constructor(
@@ -97,10 +98,13 @@ export class AuthService {
     };
 
     try {
-      this.transporter.sendMail(mailOptions);
-      console.log('Correo de verificación enviado con éxito');
+      await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Verification email sent to ${registerDto.email}`);
     } catch (error) {
-      console.error('Error al enviar el correo de verificación:', error);
+      this.logger.error(
+        `Failed to send verification email to ${registerDto.email}`,
+        error instanceof Error ? error.stack : String(error),
+      );
       throw new BadRequestException(
         'Error al enviar el correo de verificación',
       );
@@ -144,9 +148,12 @@ export class AuthService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      console.log('Correo enviado con éxito');
+      this.logger.log(`Password reset email sent to ${email}`);
     } catch (error) {
-      console.error('Error al enviar el correo:', error);
+      this.logger.error(
+        `Failed to send password reset email to ${email}`,
+        error instanceof Error ? error.stack : String(error),
+      );
     }
   }
 
