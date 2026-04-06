@@ -1,18 +1,41 @@
-# Usar una imagen base de Node.js consistente
-FROM node:20-alpine
+# ─── Stage 1: Build ───────────────────────────────────────────────────────────
+# Usamos Node 20 sobre Alpine (imagen liviana) como entorno de compilación
+FROM node:20-alpine AS build
 
-# Establecer el directorio de trabajo
+# Directorio de trabajo dentro del contenedor donde se copiará el código
 WORKDIR /usr/src/app
 
-# Copiar solo los archivos de manifiesto del paquete para aprovechar el caché de Docker
+# Copiamos solo los manifiestos de dependencias primero para aprovechar
+# la caché de capas de Docker: si package*.json no cambia, npm install no se repite
 COPY package*.json ./
 
-# Instalar dependencias (esto se ejecutará dentro del contenedor Alpine)
+# Instalamos todas las dependencias (incluyendo devDependencies necesarias para compilar)
 RUN npm install
 
-# Copiar el resto del código (esto será sobrescrito por el volumen de docker-compose, pero es buena práctica tenerlo)
+# Copiamos el resto del código fuente
 COPY . .
 
-# El comando para iniciar la app en modo de desarrollo (usando ts-node-dev o similar)
-# docker-compose anulará este CMD, pero lo dejamos como referencia.
-CMD ["npm", "run", "start:dev"]
+# Compilamos TypeScript a JavaScript (genera la carpeta dist/)
+RUN npm run build
+
+# ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
+# Nueva imagen limpia de Node 20 Alpine; no incluye el código fuente ni devDependencies
+FROM node:20-alpine
+
+# Mismo directorio de trabajo que en la etapa de build
+WORKDIR /usr/src/app
+
+# Copiamos los manifiestos para instalar solo dependencias de producción
+COPY package*.json ./
+
+# Instalamos únicamente las dependencias de producción (sin devDependencies)
+RUN npm install --only=production
+
+# Copiamos el código compilado desde la etapa de build
+COPY --from=build /usr/src/app/dist ./dist
+
+# Exponemos el puerto en el que escucha la aplicación NestJS
+EXPOSE 3000
+
+# Comando de inicio: ejecuta el archivo principal compilado
+CMD ["node", "dist/src/main"]
