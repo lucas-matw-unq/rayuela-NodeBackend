@@ -73,6 +73,13 @@ export class Game {
   play(checkin: Checkin): GameStatus {
     const newPoints = this.pointsEngine.reward(checkin, this);
     checkin.user.addPointsFromProject(newPoints, this._project.id);
+    // After earning points, the stale copy of checkin.user in _users
+    // is replaced with the updated instance before build() sorts. This way both
+    // PointsFirstLBEngine and BadgesFirstLBEngine see the correct post-checkin points/badges
+    // without touching engine code.
+    this._users = this._users.map((u) =>
+      u.id.toString() === checkin.user.id.toString() ? checkin.user : u,
+    );
     return {
       newBadges: this.badgeEngine.newBadgesFor(
         checkin.user,
