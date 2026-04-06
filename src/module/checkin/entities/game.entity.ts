@@ -73,6 +73,9 @@ export class Game {
   play(checkin: Checkin): GameStatus {
     const newPoints = this.pointsEngine.reward(checkin, this);
     checkin.user.addPointsFromProject(newPoints, this._project.id);
+    this._users = this._users.map((u) =>
+      u.id.toString() === checkin.user.id.toString() ? checkin.user : u,
+    );
     return {
       newBadges: this.badgeEngine.newBadgesFor(
         checkin.user,
