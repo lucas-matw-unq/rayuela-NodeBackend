@@ -1,2 +1,3 @@
 - [Home](README.md)
-- [Deployment](deployment.md)
+- [Deployment Architecture](deployment.md)
+- [Continuous Delivery](delivery.md)
