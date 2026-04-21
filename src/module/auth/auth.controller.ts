@@ -17,6 +17,11 @@ export interface RegisterUserDTO {
   role?: UserRole; // Por default es volunteer
 }
 
+export interface GoogleAuthDTO {
+  credential: string;
+  username?: string;
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -110,5 +115,16 @@ export class AuthController {
       profile_image,
       role,
     });
+  }
+
+  @Post('google')
+  async authenticateWithGoogle(@Body() body: GoogleAuthDTO) {
+    const { credential, username } = body;
+
+    if (!credential) {
+      throw new BadRequestException('Google credential is required');
+    }
+
+    return this.authService.authenticateWithGoogle(credential, username);
   }
 }

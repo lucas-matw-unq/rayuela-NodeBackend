@@ -10,6 +10,7 @@ describe('UserService', () => {
   beforeEach(() => {
     userDao = {
       findByEmailOrUsername: jest.fn(),
+      findByGoogleId: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       getUserById: jest.fn(),
@@ -32,6 +33,14 @@ describe('UserService', () => {
     userDao.create.mockResolvedValue(user);
     const result = await service.create(user);
     expect(userDao.create).toHaveBeenCalledWith(user);
+    expect(result).toBe(user);
+  });
+
+  it('findByGoogleId debe delegar en userDao', async () => {
+    const user = { id: '1' } as User;
+    userDao.findByGoogleId.mockResolvedValue(user);
+    const result = await service.findByGoogleId('google-id');
+    expect(userDao.findByGoogleId).toHaveBeenCalledWith('google-id');
     expect(result).toBe(user);
   });
 

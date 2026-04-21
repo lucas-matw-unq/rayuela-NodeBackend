@@ -4,6 +4,10 @@ import { AuthService } from './auth.service';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { UserRole } from './users/user.schema';
 
+jest.mock('@nestjs/jwt', () => ({
+  JwtService: class JwtService {},
+}));
+
 describe('AuthController', () => {
   let controller: AuthController;
   let service: AuthService;
@@ -11,6 +15,7 @@ describe('AuthController', () => {
   const mockAuthService = {
     validateUser: jest.fn(),
     login: jest.fn(),
+    authenticateWithGoogle: jest.fn(),
     recoverPassword: jest.fn(),
     forgotPassword: jest.fn(),
     verifyEmail: jest.fn(),
@@ -36,10 +41,13 @@ describe('AuthController', () => {
       const body = { username: 'test', password: 'password' };
       const user = { username: 'test' };
       mockAuthService.validateUser.mockResolvedValue(user);
-      mockAuthService.login.mockResolvedValue({ access_token: 'token' });
+      mockAuthService.login.mockResolvedValue({
+        access_token: 'token',
+        username: 'test',
+      });
 
       const result = await controller.login(body);
-      expect(result).toEqual({ access_token: 'token' });
+      expect(result).toEqual({ access_token: 'token', username: 'test' });
     });
 
     it('should throw BadRequestException if missing fields', async () => {
@@ -122,6 +130,32 @@ describe('AuthController', () => {
     it('should throw BadRequestException if missing fields', async () => {
       await expect(
         controller.register({ ...registerDto, username: '' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('authenticateWithGoogle', () => {
+    it('should authenticate with Google successfully', async () => {
+      mockAuthService.authenticateWithGoogle.mockResolvedValue({
+        access_token: 'token',
+        username: 'test',
+      });
+
+      const result = await controller.authenticateWithGoogle({
+        credential: 'google-token',
+        username: 'chosen-user',
+      });
+
+      expect(result).toEqual({ access_token: 'token', username: 'test' });
+      expect(service.authenticateWithGoogle).toHaveBeenCalledWith(
+        'google-token',
+        'chosen-user',
+      );
+    });
+
+    it('should throw BadRequestException if credential is missing', async () => {
+      await expect(
+        controller.authenticateWithGoogle({ credential: '' }),
       ).rejects.toThrow(BadRequestException);
     });
   });

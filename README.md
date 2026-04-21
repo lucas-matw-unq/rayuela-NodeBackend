@@ -29,6 +29,10 @@ $ npm install
    $ npm run start:dev
    ```
 
+## Google auth setup
+
+Para habilitar el login y registro con Google, configurar `GOOGLE_CLIENT_ID` con el Client ID Web generado en Google Cloud en `.env` or `.env.development`.
+
 ## Test
 
 ```bash
