@@ -69,6 +69,7 @@ describe('User Entity', () => {
     user.role = UserRole.Admin;
     user.checkins = [];
     user.contributions = ['t1'];
+    user.googleId = 'google-123';
 
     expect(user.completeName).toBe('New');
     expect(user.username).toBe('new');
@@ -78,6 +79,7 @@ describe('User Entity', () => {
     expect(user.role).toBe(UserRole.Admin);
     expect(user.checkins).toEqual([]);
     expect(user.contributions).toEqual(['t1']);
+    expect(user.googleId).toBe('google-123');
   });
 
   it('should unsubscribe from project', () => {

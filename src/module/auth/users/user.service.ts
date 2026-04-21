@@ -14,6 +14,10 @@ export class UserService {
     return this.userDao.findByEmailOrUsername(email, username);
   }
 
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.userDao.findByGoogleId(googleId);
+  }
+
   async create(userData: User): Promise<User> {
     return this.userDao.create(userData);
   }
@@ -46,7 +50,7 @@ export class UserService {
     return u;
   }
 
-  getUserByResetToken(token: string) {
+  getUserByResetToken(token: string): Promise<User | null> {
     return this.userDao.getUserByResetToken(token);
   }
 }
