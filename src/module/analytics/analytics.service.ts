@@ -30,7 +30,7 @@ export class AnalyticsService {
     return this.analyticsDao.badgeAcquisitionOverTime(projectId, granularity ?? 'week');
   }
 
-  getSummary() {
-    return this.analyticsDao.summary();
+  getSummary(projectId?: string) {
+    return this.analyticsDao.summary(projectId);
   }
 }

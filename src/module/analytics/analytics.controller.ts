@@ -65,7 +65,9 @@ export class AnalyticsController {
   }
 
   @Get('summary')
-  getSummary(): Promise<SummaryStats> {
-    return this.analyticsService.getSummary();
+  getSummary(
+    @Query('projectId') projectId?: string,
+  ): Promise<SummaryStats> {
+    return this.analyticsService.getSummary(projectId);
   }
 }

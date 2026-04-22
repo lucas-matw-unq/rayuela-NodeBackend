@@ -103,11 +103,11 @@ export class AnalyticsDao {
 
   async byStrategy(): Promise<StrategyBreakdown[]> {
     return this.checkinModel.aggregate([
-      this.lookupByStringId(ProjectTemplate.collectionName(), 'projectId', 'project'),
+      this.lookupByStringId('projects', 'projectId', 'project'),
       { $unwind: '$project' },
       {
         $lookup: {
-          from: MoveTemplate.collectionName(),
+          from: 'moves',
           let: { cid: { $toString: '$_id' } },
           pipeline: [
             { $match: { $expr: { $eq: ['$checkinId', '$$cid'] } } },
@@ -154,7 +154,7 @@ export class AnalyticsDao {
     return this.moveModel.aggregate([
       ...(projectId
         ? [
-            this.lookupByStringId(CheckInTemplate.collectionName(), 'checkinId', 'checkin'),
+            this.lookupByStringId('checkins', 'checkinId', 'checkin'),
             { $unwind: '$checkin' },
             { $match: { 'checkin.projectId': projectId } },
           ]
@@ -198,7 +198,7 @@ export class AnalyticsDao {
       },
       {
         $lookup: {
-          from: ProjectTemplate.collectionName(),
+          from: 'projects',
           let: { pid: '$_id' },
           pipeline: [
             { $match: { $expr: { $eq: [{ $toString: '$_id' }, '$$pid'] } } },
@@ -230,7 +230,7 @@ export class AnalyticsDao {
     return this.moveModel.aggregate([
       ...(projectId
         ? [
-            this.lookupByStringId(CheckInTemplate.collectionName(), 'checkinId', 'checkin'),
+            this.lookupByStringId('checkins', 'checkinId', 'checkin'),
             { $unwind: '$checkin' },
             { $match: { 'checkin.projectId': projectId } },
           ]
@@ -247,20 +247,34 @@ export class AnalyticsDao {
     ]);
   }
 
-  async summary(): Promise<SummaryStats> {
+  async summary(projectId?: string): Promise<SummaryStats> {
     const [checkins, activeUsers, badgesResult, pointsResult] = await Promise.all([
-      this.checkinModel.countDocuments(),
-      this.checkinModel.distinct('userId'),
+      this.checkinModel.countDocuments(projectId ? { projectId } : {}),
+      this.checkinModel.distinct('userId', projectId ? { projectId } : {}),
       this.moveModel.aggregate([
+        ...(projectId
+          ? [
+              this.lookupByStringId('checkins', 'checkinId', 'checkin'),
+              { $unwind: '$checkin' },
+              { $match: { 'checkin.projectId': projectId } },
+            ]
+          : []),
         { $unwind: '$newBadges' },
         { $count: 'total' },
       ]),
       this.moveModel.aggregate([
+        ...(projectId
+          ? [
+              this.lookupByStringId('checkins', 'checkinId', 'checkin'),
+              { $unwind: '$checkin' },
+              { $match: { 'checkin.projectId': projectId } },
+            ]
+          : []),
         { $group: { _id: null, total: { $sum: '$newPoints' } } },
       ]),
     ]);
 
-    const contributionData = await this.contributionRate();
+    const contributionData = await this.contributionRate(projectId);
     const totalContrib = contributionData.reduce((s, p) => s + p.withContribution, 0);
     const totalAll = contributionData.reduce((s, p) => s + p.total, 0);
 
