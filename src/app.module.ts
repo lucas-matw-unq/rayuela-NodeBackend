@@ -12,6 +12,7 @@ import { VolunteerModule } from './module/volunteer/volunteer.module';
 import { GamificationModule } from './module/gamification/gamification.module';
 import { LeaderboardModule } from './module/leaderboard/leaderboard.module';
 import { StorageModule } from './module/storage/storage.module';
+import { AnalyticsModule } from './module/analytics/analytics.module';
 
 console.log(process.env.DB_CONNECTION as string);
 @Module({
@@ -29,6 +30,7 @@ console.log(process.env.DB_CONNECTION as string);
     GamificationModule,
     LeaderboardModule,
     StorageModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
