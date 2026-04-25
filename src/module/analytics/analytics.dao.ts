@@ -65,9 +65,34 @@ export class AnalyticsDao {
     return projectId ? [{ $match: { projectId } }] : [];
   }
 
-  async checkinsOverTime(projectId: string | undefined, granularity: Granularity): Promise<TimeSeries[]> {
+  private dateRangeMatch(field: string, startDate?: string, endDate?: string): object[] {
+    if (!startDate && !endDate) return [];
+    const cond: Record<string, Date> = {};
+    if (startDate) cond.$gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setUTCHours(23, 59, 59, 999);
+      cond.$lte = end;
+    }
+    return [{ $match: { [field]: cond } }];
+  }
+
+  private buildDateFilter(field: string, startDate?: string, endDate?: string) {
+    if (!startDate && !endDate) return {};
+    const cond: Record<string, Date> = {};
+    if (startDate) cond.$gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setUTCHours(23, 59, 59, 999);
+      cond.$lte = end;
+    }
+    return { [field]: cond };
+  }
+
+  async checkinsOverTime(projectId: string | undefined, granularity: Granularity, startDate?: string, endDate?: string): Promise<TimeSeries[]> {
     return this.checkinModel.aggregate([
       ...this.projectMatch(projectId),
+      ...this.dateRangeMatch('datetime', startDate, endDate),
       {
         $group: {
           _id: this.buildDateBucket(granularity, 'datetime'),
@@ -79,9 +104,10 @@ export class AnalyticsDao {
     ]);
   }
 
-  async activeUsersOverTime(projectId: string | undefined, granularity: Granularity): Promise<ActiveUsersSeries[]> {
+  async activeUsersOverTime(projectId: string | undefined, granularity: Granularity, startDate?: string, endDate?: string): Promise<ActiveUsersSeries[]> {
     return this.checkinModel.aggregate([
       ...this.projectMatch(projectId),
+      ...this.dateRangeMatch('datetime', startDate, endDate),
       {
         $group: {
           _id: {
@@ -150,8 +176,9 @@ export class AnalyticsDao {
     ]);
   }
 
-  async pointsOverTime(projectId: string | undefined, granularity: Granularity): Promise<PointsSeries[]> {
+  async pointsOverTime(projectId: string | undefined, granularity: Granularity, startDate?: string, endDate?: string): Promise<PointsSeries[]> {
     return this.moveModel.aggregate([
+      ...this.dateRangeMatch('timestamp', startDate, endDate),
       ...(projectId
         ? [
             this.lookupByStringId('checkins', 'checkinId', 'checkin'),
@@ -226,8 +253,9 @@ export class AnalyticsDao {
     ]);
   }
 
-  async badgeAcquisitionOverTime(projectId: string | undefined, granularity: Granularity): Promise<TimeSeries[]> {
+  async badgeAcquisitionOverTime(projectId: string | undefined, granularity: Granularity, startDate?: string, endDate?: string): Promise<TimeSeries[]> {
     return this.moveModel.aggregate([
+      ...this.dateRangeMatch('timestamp', startDate, endDate),
       ...(projectId
         ? [
             this.lookupByStringId('checkins', 'checkinId', 'checkin'),
@@ -247,11 +275,15 @@ export class AnalyticsDao {
     ]);
   }
 
-  async summary(projectId?: string): Promise<SummaryStats> {
+  async summary(projectId?: string, startDate?: string, endDate?: string): Promise<SummaryStats> {
+    const dateFilter = this.buildDateFilter('datetime', startDate, endDate);
+    const baseMatch = { ...(projectId ? { projectId } : {}), ...dateFilter };
+
     const [checkins, activeUsers, badgesResult, pointsResult] = await Promise.all([
-      this.checkinModel.countDocuments(projectId ? { projectId } : {}),
-      this.checkinModel.distinct('userId', projectId ? { projectId } : {}),
+      this.checkinModel.countDocuments(baseMatch),
+      this.checkinModel.distinct('userId', baseMatch),
       this.moveModel.aggregate([
+        ...this.dateRangeMatch('timestamp', startDate, endDate),
         ...(projectId
           ? [
               this.lookupByStringId('checkins', 'checkinId', 'checkin'),
@@ -263,6 +295,7 @@ export class AnalyticsDao {
         { $count: 'total' },
       ]),
       this.moveModel.aggregate([
+        ...this.dateRangeMatch('timestamp', startDate, endDate),
         ...(projectId
           ? [
               this.lookupByStringId('checkins', 'checkinId', 'checkin'),
