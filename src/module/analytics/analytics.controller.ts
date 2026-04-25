@@ -24,16 +24,20 @@ export class AnalyticsController {
   getCheckinsOverTime(
     @Query('projectId') projectId?: string,
     @Query('granularity') granularity: Granularity = 'week',
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ): Promise<TimeSeries[]> {
-    return this.analyticsService.getCheckinsOverTime(projectId, granularity);
+    return this.analyticsService.getCheckinsOverTime(projectId, granularity, startDate, endDate);
   }
 
   @Get('active-users-over-time')
   getActiveUsersOverTime(
     @Query('projectId') projectId?: string,
     @Query('granularity') granularity: Granularity = 'week',
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ): Promise<ActiveUsersSeries[]> {
-    return this.analyticsService.getActiveUsersOverTime(projectId, granularity);
+    return this.analyticsService.getActiveUsersOverTime(projectId, granularity, startDate, endDate);
   }
 
   @Get('by-strategy')
@@ -45,8 +49,10 @@ export class AnalyticsController {
   getPointsOverTime(
     @Query('projectId') projectId?: string,
     @Query('granularity') granularity: Granularity = 'week',
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ): Promise<PointsSeries[]> {
-    return this.analyticsService.getPointsOverTime(projectId, granularity);
+    return this.analyticsService.getPointsOverTime(projectId, granularity, startDate, endDate);
   }
 
   @Get('contribution-rate')
@@ -60,14 +66,18 @@ export class AnalyticsController {
   getBadgeAcquisitionOverTime(
     @Query('projectId') projectId?: string,
     @Query('granularity') granularity: Granularity = 'week',
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ): Promise<TimeSeries[]> {
-    return this.analyticsService.getBadgeAcquisitionOverTime(projectId, granularity);
+    return this.analyticsService.getBadgeAcquisitionOverTime(projectId, granularity, startDate, endDate);
   }
 
   @Get('summary')
   getSummary(
     @Query('projectId') projectId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ): Promise<SummaryStats> {
-    return this.analyticsService.getSummary(projectId);
+    return this.analyticsService.getSummary(projectId, startDate, endDate);
   }
 }
