@@ -6,31 +6,31 @@ import { Granularity } from './analytics.types';
 export class AnalyticsService {
   constructor(private readonly analyticsDao: AnalyticsDao) {}
 
-  getCheckinsOverTime(projectId?: string, granularity?: Granularity) {
-    return this.analyticsDao.checkinsOverTime(projectId, granularity ?? 'week');
+  getCheckinsOverTime(projectId?: string, granularity?: Granularity, startDate?: string, endDate?: string) {
+    return this.analyticsDao.checkinsOverTime(projectId, granularity ?? 'week', startDate, endDate);
   }
 
-  getActiveUsersOverTime(projectId?: string, granularity?: Granularity) {
-    return this.analyticsDao.activeUsersOverTime(projectId, granularity ?? 'week');
+  getActiveUsersOverTime(projectId?: string, granularity?: Granularity, startDate?: string, endDate?: string) {
+    return this.analyticsDao.activeUsersOverTime(projectId, granularity ?? 'week', startDate, endDate);
   }
 
   getByStrategy() {
     return this.analyticsDao.byStrategy();
   }
 
-  getPointsOverTime(projectId?: string, granularity?: Granularity) {
-    return this.analyticsDao.pointsOverTime(projectId, granularity ?? 'week');
+  getPointsOverTime(projectId?: string, granularity?: Granularity, startDate?: string, endDate?: string) {
+    return this.analyticsDao.pointsOverTime(projectId, granularity ?? 'week', startDate, endDate);
   }
 
   getContributionRate(projectId?: string) {
     return this.analyticsDao.contributionRate(projectId);
   }
 
-  getBadgeAcquisitionOverTime(projectId?: string, granularity?: Granularity) {
-    return this.analyticsDao.badgeAcquisitionOverTime(projectId, granularity ?? 'week');
+  getBadgeAcquisitionOverTime(projectId?: string, granularity?: Granularity, startDate?: string, endDate?: string) {
+    return this.analyticsDao.badgeAcquisitionOverTime(projectId, granularity ?? 'week', startDate, endDate);
   }
 
-  getSummary(projectId?: string) {
-    return this.analyticsDao.summary(projectId);
+  getSummary(projectId?: string, startDate?: string, endDate?: string) {
+    return this.analyticsDao.summary(projectId, startDate, endDate);
   }
 }
