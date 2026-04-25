@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Document } from 'mongoose';
+import { Model, Document, PipelineStage } from 'mongoose';
 import { CheckInDocument, CheckInTemplate } from '../checkin/persistence/checkin.schema';
 import { MoveDocument, MoveTemplate } from '../checkin/persistence/move.schema';
 import { ProjectDocument, ProjectTemplate } from '../project/persistence/project.schema';
@@ -65,7 +65,7 @@ export class AnalyticsDao {
     return projectId ? [{ $match: { projectId } }] : [];
   }
 
-  private dateRangeMatch(field: string, startDate?: string, endDate?: string): object[] {
+  private dateRangeMatch(field: string, startDate?: string, endDate?: string): PipelineStage[] {
     if (!startDate && !endDate) return [];
     const cond: Record<string, Date> = {};
     if (startDate) cond.$gte = new Date(startDate);
@@ -74,7 +74,7 @@ export class AnalyticsDao {
       end.setUTCHours(23, 59, 59, 999);
       cond.$lte = end;
     }
-    return [{ $match: { [field]: cond } }];
+    return [{ $match: { [field]: cond } } as PipelineStage];
   }
 
   private buildDateFilter(field: string, startDate?: string, endDate?: string) {
