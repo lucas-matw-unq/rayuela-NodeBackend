@@ -14,7 +14,9 @@ export class UserMapper {
       userDocument._id,
       userDocument.gameProfiles,
       userDocument.contributions,
-      [],
+      [], // ratings
+      [], // checkins
+      userDocument.createdAt,
     );
   }
 
@@ -31,6 +33,7 @@ export class UserMapper {
       resetToken: user.resetToken,
       gameProfiles: user.gameProfiles,
       contributions: user.contributions,
+      createdAt: user.createdAt,
       ratings: user.ratings.map((r) => ({
         score: r.score,
         checkinId: r.checkinId,

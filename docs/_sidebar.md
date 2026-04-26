@@ -1,2 +1,3 @@
 - [Home](README.md)
 - [Deployment & Infrastructure](deployment.md)
+- [Analytics Data Extraction](analytics-queries.md)

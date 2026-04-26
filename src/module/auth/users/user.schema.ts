@@ -42,6 +42,9 @@ export class UserTemplate {
   @Prop({ required: true })
   password: string; // Contraseña (hash)
 
+  @Prop({ type: Date, default: Date.now })
+  createdAt: Date;
+
   @Prop({ default: null })
   profile_image: string; // Imagen de perfil (puede ser una URL)
 
