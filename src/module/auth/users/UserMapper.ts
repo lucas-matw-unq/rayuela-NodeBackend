@@ -15,8 +15,9 @@ export class UserMapper {
       userDocument.gameProfiles,
       userDocument.contributions,
       userDocument.ratings || [],
-      [],
+      [], // checkins
       userDocument.googleId ?? null,
+      userDocument.createdAt,
     );
   }
 
@@ -34,6 +35,7 @@ export class UserMapper {
       ...(user.googleId ? { googleId: user.googleId } : {}),
       gameProfiles: user.gameProfiles,
       contributions: user.contributions,
+      createdAt: user.createdAt,
       ratings: user.ratings.map((r) => ({
         score: r.score,
         checkinId: r.checkinId,

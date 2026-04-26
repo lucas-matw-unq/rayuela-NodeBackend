@@ -45,6 +45,9 @@ export class UserTemplate {
   @Prop({ required: false })
   googleId?: string; // Identificador estable de Google
 
+  @Prop({ type: Date, default: Date.now })
+  createdAt: Date;
+
   @Prop({ default: null })
   profile_image: string; // Imagen de perfil (puede ser una URL)
 

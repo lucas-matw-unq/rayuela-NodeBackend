@@ -57,6 +57,14 @@ export class User {
     return this._contributions;
   }
 
+  get createdAt(): Date {
+    return this._createdAt;
+  }
+
+  set createdAt(value: Date) {
+    this._createdAt = value;
+  }
+
   get gameProfiles(): GameProfile[] {
     return this._gameProfiles;
   }
@@ -83,6 +91,7 @@ export class User {
   private _ratings: UserRating[];
   private _checkins: Checkin[];
   private _googleId: string | null;
+  private _createdAt: Date;
 
   constructor(
     completeName: string,
@@ -98,6 +107,7 @@ export class User {
     ratings: UserRating[] = [],
     checkins: Checkin[] = [],
     googleId: string | null = null,
+    createdAt: Date = new Date(),
   ) {
     this._completeName = completeName;
     this._username = username;
@@ -112,6 +122,7 @@ export class User {
     this._ratings = ratings;
     this._checkins = checkins;
     this._googleId = googleId;
+    this._createdAt = createdAt;
   }
 
   get password(): string {
