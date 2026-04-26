@@ -42,6 +42,9 @@ export class UserTemplate {
   @Prop({ required: true })
   password: string; // Contraseña (hash)
 
+  @Prop({ required: false })
+  googleId?: string; // Identificador estable de Google
+
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;
 
@@ -69,3 +72,13 @@ export class UserTemplate {
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserTemplate);
+UserSchema.index(
+  { googleId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      googleId: { $exists: true, $type: 'string' },
+    },
+    name: 'googleId_1',
+  },
+);

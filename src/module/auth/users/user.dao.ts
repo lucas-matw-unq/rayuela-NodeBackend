@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { UserDocument, UserTemplate } from './user.schema';
@@ -7,6 +7,8 @@ import { UserMapper } from './UserMapper';
 
 @Injectable()
 export class UserDao {
+  private readonly logger = new Logger(UserDao.name);
+
   constructor(
     @InjectModel(UserTemplate.collectionName())
     private userModel: Model<UserDocument>,
@@ -19,6 +21,11 @@ export class UserDao {
     const userDocument = await this.userModel
       .findOne({ $or: [{ email }, { username }] })
       .exec();
+    return userDocument ? UserMapper.toEntity(userDocument) : null;
+  }
+
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    const userDocument = await this.userModel.findOne({ googleId }).exec();
     return userDocument ? UserMapper.toEntity(userDocument) : null;
   }
 
@@ -56,6 +63,6 @@ export class UserDao {
 
   async getUserByResetToken(token: string) {
     const u = await this.userModel.findOne({ resetToken: token }).exec();
-    return UserMapper.toEntity(u);
+    return u ? UserMapper.toEntity(u) : null;
   }
 }

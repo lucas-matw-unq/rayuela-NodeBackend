@@ -15,6 +15,14 @@ export interface UserRating {
 }
 
 export class User {
+  get googleId(): string | null {
+    return this._googleId;
+  }
+
+  set googleId(value: string | null) {
+    this._googleId = value;
+  }
+
   set contributions(value: string[]) {
     this._contributions = value;
   }
@@ -82,6 +90,7 @@ export class User {
   private _resetToken: string;
   private _ratings: UserRating[];
   private _checkins: Checkin[];
+  private _googleId: string | null;
   private _createdAt: Date;
 
   constructor(
@@ -97,6 +106,7 @@ export class User {
     contributions: string[] = [],
     ratings: UserRating[] = [],
     checkins: Checkin[] = [],
+    googleId: string | null = null,
     createdAt: Date = new Date(),
   ) {
     this._completeName = completeName;
@@ -111,6 +121,7 @@ export class User {
     this._contributions = contributions;
     this._ratings = ratings;
     this._checkins = checkins;
+    this._googleId = googleId;
     this._createdAt = createdAt;
   }
 

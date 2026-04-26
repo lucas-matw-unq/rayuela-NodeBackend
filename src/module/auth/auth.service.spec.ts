@@ -14,12 +14,16 @@ import { RegisterUserDTO } from './auth.controller';
 jest.mock('bcryptjs');
 jest.mock('uuid');
 jest.mock('nodemailer');
+jest.mock('@nestjs/jwt', () => ({
+  JwtService: class JwtService {},
+}));
 
 describe('AuthService', () => {
   let service: AuthService;
 
   const mockUserService = {
     findByEmailOrUsername: jest.fn(),
+    findByGoogleId: jest.fn(),
     create: jest.fn(),
     getUserByResetToken: jest.fn(),
     update: jest.fn(),
@@ -36,6 +40,8 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     (nodemailer.createTransport as jest.Mock).mockReturnValue(mockTransporter);
+    process.env.GOOGLE_CLIENT_ID = 'google-client-id';
+    global.fetch = jest.fn();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -232,12 +238,183 @@ describe('AuthService', () => {
 
       const result = await service.login(user);
 
-      expect(result).toEqual({ access_token: 'test-token' });
+      expect(result).toEqual({
+        access_token: 'test-token',
+        username: 'testuser',
+      });
       expect(mockJwtService.sign).toHaveBeenCalledWith({
         username: user.username,
         sub: user.id,
         role: user.role,
       });
+    });
+  });
+
+  describe('authenticateWithGoogle', () => {
+    const googlePayload = {
+      sub: 'google-123',
+      email: 'google@test.com',
+      email_verified: true,
+      name: 'Google User',
+      picture: 'https://example.com/avatar.png',
+    };
+
+    it('should link an existing email account and return a session', async () => {
+      const user = new User(
+        'Test',
+        'testuser',
+        'google@test.com',
+        'hashedpassword',
+        '',
+        false,
+        UserRole.Volunteer,
+      );
+      user.id = 'user-id';
+      mockUserService.findByGoogleId.mockResolvedValue(null);
+      mockUserService.findByEmailOrUsername.mockResolvedValue(user);
+      mockUserService.update.mockImplementation(async (_id, updatedUser) => updatedUser);
+      mockJwtService.sign.mockReturnValue('google-token');
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          ...googlePayload,
+          aud: 'google-client-id',
+        }),
+      });
+
+      const result = await service.authenticateWithGoogle('credential');
+
+      expect(mockUserService.findByGoogleId).toHaveBeenCalledWith('google-123');
+      expect(mockUserService.update).toHaveBeenCalledWith('user-id', user);
+      expect(user.googleId).toBe('google-123');
+      expect(user.verified).toBe(true);
+      expect(result).toEqual({
+        access_token: 'google-token',
+        username: 'testuser',
+        isNewUser: false,
+      });
+    });
+
+    it('should create a verified user when the Google account is new and a username is provided', async () => {
+      mockUserService.findByGoogleId.mockResolvedValue(null);
+      mockUserService.findByEmailOrUsername
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      mockUserService.create.mockImplementation(async (user) => {
+        user.id = 'new-user-id';
+        return user;
+      });
+      mockJwtService.sign.mockReturnValue('google-token');
+      (bcrypt.genSalt as jest.Mock).mockResolvedValue('salt');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedpassword');
+      (uuidv4 as jest.Mock).mockReturnValue('generated-secret');
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          ...googlePayload,
+          aud: 'google-client-id',
+        }),
+      });
+
+      const result = await service.authenticateWithGoogle(
+        'credential',
+        'google_user',
+      );
+
+      expect(mockUserService.create).toHaveBeenCalled();
+      expect(result).toEqual({
+        access_token: 'google-token',
+        username: 'google_user',
+        isNewUser: true,
+      });
+    });
+
+    it('should request a username for a new Google signup when none is provided', async () => {
+      mockUserService.findByGoogleId.mockResolvedValue(null);
+      mockUserService.findByEmailOrUsername
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          ...googlePayload,
+          aud: 'google-client-id',
+        }),
+      });
+
+      await expect(service.authenticateWithGoogle('credential')).rejects.toMatchObject({
+        response: {
+          message: 'Username is required for new Google signup',
+          requiresUsername: true,
+          suggestedUsername: 'google_user',
+        },
+      });
+    });
+
+    it('should create a verified user with the requested username', async () => {
+      mockUserService.findByGoogleId.mockResolvedValue(null);
+      mockUserService.findByEmailOrUsername
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      mockUserService.create.mockImplementation(async (user) => {
+        user.id = 'new-user-id';
+        return user;
+      });
+      mockJwtService.sign.mockReturnValue('google-token');
+      (bcrypt.genSalt as jest.Mock).mockResolvedValue('salt');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashedpassword');
+      (uuidv4 as jest.Mock).mockReturnValue('generated-secret');
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          ...googlePayload,
+          aud: 'google-client-id',
+        }),
+      });
+
+      const result = await service.authenticateWithGoogle(
+        'credential',
+        'chosen-user',
+      );
+
+      expect(mockUserService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          username: 'chosen-user',
+        }),
+      );
+      expect(result).toEqual({
+        access_token: 'google-token',
+        username: 'chosen-user',
+        isNewUser: true,
+      });
+    });
+
+    it('should reject requested usernames already in use for a new Google user', async () => {
+      mockUserService.findByGoogleId.mockResolvedValue(null);
+      mockUserService.findByEmailOrUsername
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(new User('Taken', 'taken-user', 'taken@test.com', 'password'));
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          ...googlePayload,
+          aud: 'google-client-id',
+        }),
+      });
+
+      await expect(
+        service.authenticateWithGoogle('credential', 'taken-user'),
+      ).rejects.toThrow('Username already in use');
+    });
+
+    it('should reject invalid Google credentials', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+      });
+
+      await expect(service.authenticateWithGoogle('credential')).rejects.toThrow(
+        'Invalid Google credentials',
+      );
     });
   });
 

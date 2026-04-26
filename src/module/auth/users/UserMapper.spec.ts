@@ -9,24 +9,29 @@ describe('UserMapper', () => {
       username: 'user',
       email: 'e@e.com',
       password: 'p',
+      googleId: 'google-123',
       profile_image: 'img',
       verified: true,
       role: UserRole.Volunteer,
       _id: '1',
       gameProfiles: [],
       contributions: [],
+      ratings: [],
     } as any;
     const entity = UserMapper.toEntity(doc);
     expect(entity.id).toBe('1');
     expect(entity.completeName).toBe('Name');
+    expect(entity.googleId).toBe('google-123');
   });
 
   it('should map entity to template', () => {
     const entity = new User('Name', 'user', 'e@e.com', 'p');
     entity.id = '1';
+    entity.googleId = 'google-123';
     const template = UserMapper.toTemplate(entity);
     expect(template.complete_name).toBe('Name');
     expect(template.username).toBe('user');
+    expect(template.googleId).toBe('google-123');
   });
 
   it('should map entity to template with ratings', () => {
@@ -37,5 +42,6 @@ describe('UserMapper', () => {
     expect(template.complete_name).toBe('Name');
     expect(template.ratings).toHaveLength(1);
     expect(template.ratings[0].score).toBe(5);
+    expect(template.googleId).toBeUndefined();
   });
 });

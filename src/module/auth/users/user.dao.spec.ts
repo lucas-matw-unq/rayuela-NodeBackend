@@ -63,6 +63,21 @@ describe('UserDao', () => {
     expect(res).toBeNull();
   });
 
+  it('should find by google id', async () => {
+    model.findOne.mockReturnThis();
+    model.exec.mockResolvedValue({
+      _id: '1',
+      email: 'e',
+      username: 'u',
+      googleId: 'google-123',
+      gameProfiles: [],
+      contributions: [],
+      ratings: [],
+    });
+    const res = await dao.findByGoogleId('google-123');
+    expect(res?.googleId).toBe('google-123');
+  });
+
   it('should create user', async () => {
     const user = new User('N', 'u', 'e', 'p');
     const res = await dao.create(user);
@@ -128,8 +143,16 @@ describe('UserDao', () => {
       _id: '1',
       gameProfiles: [],
       contributions: [],
+      ratings: [],
     });
     const res = await dao.getUserByResetToken('token');
     expect(res.id).toBe('1');
+  });
+
+  it('should return null when reset token does not match a user', async () => {
+    model.findOne.mockReturnThis();
+    model.exec.mockResolvedValue(null);
+    const res = await dao.getUserByResetToken('token');
+    expect(res).toBeNull();
   });
 });
