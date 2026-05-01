@@ -13,11 +13,43 @@ import { RegisterUserDTO } from './auth.controller';
 import { v4 as uuidv4 } from 'uuid';
 import * as nodemailer from 'nodemailer';
 import * as process from 'node:process';
+import { createHash, timingSafeEqual } from 'node:crypto';
+import {
+  ACCESS_TOKEN_TTL_SECONDS,
+  REFRESH_TOKEN_SEPARATOR,
+  REFRESH_TOKEN_TTL_DAYS,
+} from './auth.constants';
 
 export interface UserJWT {
   userId: string;
   username: string;
   role: UserRole;
+}
+
+/**
+ * SHA-256 of a refresh token, hex-encoded.
+ *
+ * We deliberately use SHA-256 (not bcrypt) for refresh-token storage:
+ *   - The token already carries 122 bits of UUID v4 entropy, so a slow KDF
+ *     adds no meaningful protection — brute-forcing it from the hash is
+ *     computationally infeasible regardless of speed.
+ *   - bcrypt silently truncates input to 72 bytes. Since the token is shaped
+ *     as `${userId}.${uuid}`, a longer userId could one day cross that limit
+ *     and cause silent collisions. SHA-256 has no such cap.
+ *   - Hash comparison becomes a constant-time string compare, simplifying
+ *     `refreshAccessToken`.
+ *
+ * Standard recommendation for refresh-token storage in OAuth2 / OIDC
+ * implementations.
+ */
+function hashRefreshToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+/** Constant-time hex-string comparison to avoid timing attacks. */
+function safeHashCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
 }
 
 interface GoogleTokenPayload {
@@ -210,10 +242,72 @@ export class AuthService {
       sub: user.id,
       role: user.role,
     };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    // Generate and persist a refresh token. The userId is prefixed onto the
+    // token so we can look up the owner on /auth/refresh without requiring
+    // the client to also send a userId.
+    const refreshToken = `${user.id}${REFRESH_TOKEN_SEPARATOR}${uuidv4()}`;
+    const refreshTokenExpiry = new Date(
+      Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000,
+    );
+
+    user.refreshTokenHash = hashRefreshToken(refreshToken);
+    user.refreshTokenExpiry = refreshTokenExpiry;
+    await this.usersService.update(user.id, user);
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_in: ACCESS_TOKEN_TTL_SECONDS,
       username: user.username,
     };
+  }
+
+  /**
+   * Validates a refresh token, rotates the pair, and returns new tokens.
+   * The userId is recovered from the refresh token itself
+   * (`${userId}.${secret}`), so the client only needs to send the token.
+   */
+  async refreshAccessToken(refreshToken: string) {
+    const separatorIndex = refreshToken.indexOf(REFRESH_TOKEN_SEPARATOR);
+    if (separatorIndex <= 0) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    const userId = refreshToken.slice(0, separatorIndex);
+
+    const user = await this.usersService.getByUserId(userId);
+    if (!user || !user.refreshTokenHash || !user.refreshTokenExpiry) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Check expiry
+    if (user.refreshTokenExpiry < new Date()) {
+      // Expired — wipe the token so it can never be reused
+      user.refreshTokenHash = null;
+      user.refreshTokenExpiry = null;
+      await this.usersService.update(user.id, user);
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    // Verify hash (constant-time)
+    if (!safeHashCompare(hashRefreshToken(refreshToken), user.refreshTokenHash)) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Rotate: issue a brand-new pair of tokens. The new login() overwrites
+    // user.refreshTokenHash, so the token we just consumed cannot be reused.
+    return this.login(user);
+  }
+
+  /** Invalidates the refresh token for the given user (server-side logout). */
+  async logout(userId: string): Promise<void> {
+    const user = await this.usersService.getByUserId(userId);
+    if (!user) return;
+    user.refreshTokenHash = null;
+    user.refreshTokenExpiry = null;
+    await this.usersService.update(user.id, user);
   }
 
   async forgotPassword(email: string) {

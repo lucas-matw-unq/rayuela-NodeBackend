@@ -7,6 +7,15 @@ import { UserRole } from './users/user.schema';
 jest.mock('@nestjs/jwt', () => ({
   JwtService: class JwtService {},
 }));
+jest.mock('@nestjs/passport', () => ({
+  AuthGuard: () => {
+    return class MockGuard {
+      canActivate() {
+        return true;
+      }
+    };
+  },
+}));
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -20,6 +29,8 @@ describe('AuthController', () => {
     forgotPassword: jest.fn(),
     verifyEmail: jest.fn(),
     register: jest.fn(),
+    refreshAccessToken: jest.fn(),
+    logout: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -43,11 +54,18 @@ describe('AuthController', () => {
       mockAuthService.validateUser.mockResolvedValue(user);
       mockAuthService.login.mockResolvedValue({
         access_token: 'token',
+        refresh_token: 'refresh',
+        expires_in: 3600,
         username: 'test',
       });
 
       const result = await controller.login(body);
-      expect(result).toEqual({ access_token: 'token', username: 'test' });
+      expect(result).toEqual({
+        access_token: 'token',
+        refresh_token: 'refresh',
+        expires_in: 3600,
+        username: 'test',
+      });
     });
 
     it('should throw BadRequestException if missing fields', async () => {
@@ -138,6 +156,8 @@ describe('AuthController', () => {
     it('should authenticate with Google successfully', async () => {
       mockAuthService.authenticateWithGoogle.mockResolvedValue({
         access_token: 'token',
+        refresh_token: 'refresh',
+        expires_in: 3600,
         username: 'test',
       });
 
@@ -146,7 +166,12 @@ describe('AuthController', () => {
         username: 'chosen-user',
       });
 
-      expect(result).toEqual({ access_token: 'token', username: 'test' });
+      expect(result).toEqual({
+        access_token: 'token',
+        refresh_token: 'refresh',
+        expires_in: 3600,
+        username: 'test',
+      });
       expect(service.authenticateWithGoogle).toHaveBeenCalledWith(
         'google-token',
         'chosen-user',
@@ -157,6 +182,47 @@ describe('AuthController', () => {
       await expect(
         controller.authenticateWithGoogle({ credential: '' }),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('refresh', () => {
+    it('should refresh tokens successfully', async () => {
+      mockAuthService.refreshAccessToken.mockResolvedValue({
+        access_token: 'new-token',
+        refresh_token: 'new-refresh',
+        expires_in: 3600,
+        username: 'test',
+      });
+
+      const result = await controller.refresh({
+        refreshToken: 'user-id.old-refresh',
+      });
+
+      expect(result).toEqual({
+        access_token: 'new-token',
+        refresh_token: 'new-refresh',
+        expires_in: 3600,
+        username: 'test',
+      });
+      expect(service.refreshAccessToken).toHaveBeenCalledWith(
+        'user-id.old-refresh',
+      );
+    });
+
+    it('should throw BadRequestException if refreshToken is missing', async () => {
+      await expect(
+        controller.refresh({ refreshToken: '' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('logout', () => {
+    it('should logout successfully', async () => {
+      const req = { user: { userId: 'user-id' } };
+      const result = await controller.logout(req);
+
+      expect(result).toEqual({ message: 'Logged out successfully' });
+      expect(service.logout).toHaveBeenCalledWith('user-id');
     });
   });
 });

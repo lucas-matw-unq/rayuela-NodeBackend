@@ -4,7 +4,10 @@ import {
   Body,
   UnauthorizedException,
   BadRequestException,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { UserRole } from './users/user.schema';
 
@@ -126,5 +129,23 @@ export class AuthController {
     }
 
     return this.authService.authenticateWithGoogle(credential, username);
+  }
+
+  @Post('refresh')
+  async refresh(@Body() body: { refreshToken: string }) {
+    const { refreshToken } = body;
+
+    if (!refreshToken) {
+      throw new BadRequestException('Refresh token is required');
+    }
+
+    return this.authService.refreshAccessToken(refreshToken);
+  }
+
+  @Post('logout')
+  @UseGuards(AuthGuard('jwt'))
+  async logout(@Req() req) {
+    await this.authService.logout(req.user.userId);
+    return { message: 'Logged out successfully' };
   }
 }

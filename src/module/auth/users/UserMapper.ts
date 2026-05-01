@@ -18,6 +18,8 @@ export class UserMapper {
       [], // checkins
       userDocument.googleId ?? null,
       userDocument.createdAt,
+      userDocument.refreshTokenHash ?? null,
+      userDocument.refreshTokenExpiry ?? null,
     );
   }
 
@@ -36,6 +38,8 @@ export class UserMapper {
       gameProfiles: user.gameProfiles,
       contributions: user.contributions,
       createdAt: user.createdAt,
+      refreshTokenHash: user.refreshTokenHash,
+      refreshTokenExpiry: user.refreshTokenExpiry,
       ratings: user.ratings.map((r) => ({
         score: r.score,
         checkinId: r.checkinId,

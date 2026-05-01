@@ -92,6 +92,8 @@ export class User {
   private _checkins: Checkin[];
   private _googleId: string | null;
   private _createdAt: Date;
+  private _refreshTokenHash: string | null;
+  private _refreshTokenExpiry: Date | null;
 
   constructor(
     completeName: string,
@@ -108,6 +110,8 @@ export class User {
     checkins: Checkin[] = [],
     googleId: string | null = null,
     createdAt: Date = new Date(),
+    refreshTokenHash: string | null = null,
+    refreshTokenExpiry: Date | null = null,
   ) {
     this._completeName = completeName;
     this._username = username;
@@ -123,6 +127,8 @@ export class User {
     this._checkins = checkins;
     this._googleId = googleId;
     this._createdAt = createdAt;
+    this._refreshTokenHash = refreshTokenHash;
+    this._refreshTokenExpiry = refreshTokenExpiry;
   }
 
   get password(): string {
@@ -271,5 +277,21 @@ export class User {
         };
       });
     }
+  }
+
+  get refreshTokenHash(): string | null {
+    return this._refreshTokenHash;
+  }
+
+  set refreshTokenHash(value: string | null) {
+    this._refreshTokenHash = value;
+  }
+
+  get refreshTokenExpiry(): Date | null {
+    return this._refreshTokenExpiry;
+  }
+
+  set refreshTokenExpiry(value: Date | null) {
+    this._refreshTokenExpiry = value;
   }
 }

@@ -10,6 +10,7 @@ import { UserService } from './users/user.service';
 import { UserController } from './users/user.controller';
 import { ConfigModule } from '@nestjs/config';
 import { UserDao } from './users/user.dao';
+import { ACCESS_TOKEN_TTL_SECONDS } from './auth.constants';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { UserDao } from './users/user.dao';
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '1d' },
+      signOptions: { expiresIn: ACCESS_TOKEN_TTL_SECONDS },
     }),
     MongooseModule.forFeature([
       { name: UserTemplate.collectionName(), schema: UserSchema },

@@ -60,6 +60,12 @@ export class UserTemplate {
   @Prop({ type: Array, default: [] })
   gameProfiles: GameProfile[];
 
+  @Prop({ default: null })
+  refreshTokenHash: string; // bcrypt hash of the refresh token
+
+  @Prop({ type: Date, default: null })
+  refreshTokenExpiry: Date; // when the refresh token expires
+
   @Prop({ type: Array, default: [] })
   contributions: string[]; // tasks id
 

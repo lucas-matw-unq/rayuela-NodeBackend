@@ -8,6 +8,7 @@ import { UserRole } from './users/user.schema';
 import * as bcrypt from 'bcryptjs';
 import * as nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
+import { createHash } from 'node:crypto';
 import { RegisterUserDTO } from './auth.controller';
 
 // Mock de dependencias externas
@@ -17,6 +18,10 @@ jest.mock('nodemailer');
 jest.mock('@nestjs/jwt', () => ({
   JwtService: class JwtService {},
 }));
+
+// Refresh-token hashing is SHA-256 (real, deterministic) — no mocking needed.
+const sha256Hex = (s: string) =>
+  createHash('sha256').update(s).digest('hex');
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -28,6 +33,7 @@ describe('AuthService', () => {
     getUserByResetToken: jest.fn(),
     update: jest.fn(),
     saveResetToken: jest.fn(),
+    getByUserId: jest.fn(),
   };
 
   const mockJwtService = {
@@ -223,7 +229,7 @@ describe('AuthService', () => {
   });
 
   describe('login', () => {
-    it('should return an access token', async () => {
+    it('should return access token, refresh token, expires_in, and username', async () => {
       const user = new User(
         'Test',
         'testuser',
@@ -235,11 +241,18 @@ describe('AuthService', () => {
       );
       user.id = 'user-id';
       mockJwtService.sign.mockReturnValue('test-token');
+      (uuidv4 as jest.Mock).mockReturnValue('refresh-token-uuid');
+      mockUserService.update.mockImplementation(async (_id, u) => u);
 
       const result = await service.login(user);
 
+      const expectedRefreshToken = 'user-id.refresh-token-uuid';
       expect(result).toEqual({
         access_token: 'test-token',
+        // Token is shaped as `${user.id}.${uuidv4()}` so the server can find
+        // the owner on /auth/refresh.
+        refresh_token: expectedRefreshToken,
+        expires_in: 3600,
         username: 'testuser',
       });
       expect(mockJwtService.sign).toHaveBeenCalledWith({
@@ -247,6 +260,14 @@ describe('AuthService', () => {
         sub: user.id,
         role: user.role,
       });
+      // The persisted hash must be SHA-256 of the token we returned to the
+      // client — anything else means refresh would never validate.
+      expect(mockUserService.update).toHaveBeenCalledWith(
+        'user-id',
+        expect.objectContaining({
+          refreshTokenHash: sha256Hex(expectedRefreshToken),
+        }),
+      );
     });
   });
 
@@ -285,14 +306,16 @@ describe('AuthService', () => {
       const result = await service.authenticateWithGoogle('credential');
 
       expect(mockUserService.findByGoogleId).toHaveBeenCalledWith('google-123');
-      expect(mockUserService.update).toHaveBeenCalledWith('user-id', user);
+      expect(mockUserService.update).toHaveBeenCalled();
       expect(user.googleId).toBe('google-123');
       expect(user.verified).toBe(true);
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         access_token: 'google-token',
         username: 'testuser',
         isNewUser: false,
       });
+      expect(result).toHaveProperty('refresh_token');
+      expect(result).toHaveProperty('expires_in', 3600);
     });
 
     it('should create a verified user when the Google account is new and a username is provided', async () => {
@@ -322,11 +345,13 @@ describe('AuthService', () => {
       );
 
       expect(mockUserService.create).toHaveBeenCalled();
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         access_token: 'google-token',
         username: 'google_user',
         isNewUser: true,
       });
+      expect(result).toHaveProperty('refresh_token');
+      expect(result).toHaveProperty('expires_in', 3600);
     });
 
     it('should request a username for a new Google signup when none is provided', async () => {
@@ -382,11 +407,13 @@ describe('AuthService', () => {
           username: 'chosen-user',
         }),
       );
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         access_token: 'google-token',
         username: 'chosen-user',
         isNewUser: true,
       });
+      expect(result).toHaveProperty('refresh_token');
+      expect(result).toHaveProperty('expires_in', 3600);
     });
 
     it('should reject requested usernames already in use for a new Google user', async () => {
@@ -525,6 +552,222 @@ describe('AuthService', () => {
       );
       expect(result.password).toBe('newhashedpassword');
       expect(result.resetToken).toBeNull();
+    });
+  });
+
+  describe('refreshAccessToken', () => {
+    /** Helper: build a user whose stored hash matches `refreshToken`. */
+    const userWithHashFor = (refreshToken: string, expiry: Date) => {
+      const u = new User(
+        'Test',
+        'testuser',
+        'test@test.com',
+        'hashedpassword',
+        '',
+        true,
+        UserRole.Volunteer,
+      );
+      u.id = 'user-id';
+      u.refreshTokenHash = sha256Hex(refreshToken);
+      u.refreshTokenExpiry = expiry;
+      return u;
+    };
+
+    it('should return new tokens for a valid refresh token', async () => {
+      const validToken = 'user-id.valid-secret';
+      const user = userWithHashFor(validToken, new Date(Date.now() + 1000 * 60 * 60));
+
+      mockUserService.getByUserId.mockResolvedValue(user);
+      mockJwtService.sign.mockReturnValue('new-access-token');
+      (uuidv4 as jest.Mock).mockReturnValue('new-refresh-uuid');
+      mockUserService.update.mockImplementation(async (_id, u) => u);
+
+      const result = await service.refreshAccessToken(validToken);
+
+      expect(mockUserService.getByUserId).toHaveBeenCalledWith('user-id');
+      expect(result).toMatchObject({
+        access_token: 'new-access-token',
+        // The new refresh token also follows the `${userId}.${uuid}` shape.
+        refresh_token: 'user-id.new-refresh-uuid',
+        expires_in: 3600,
+        username: 'testuser',
+      });
+    });
+
+    it('should throw UnauthorizedException for invalid refresh token', async () => {
+      const user = userWithHashFor(
+        'user-id.correct-secret',
+        new Date(Date.now() + 1000 * 60 * 60),
+      );
+      mockUserService.getByUserId.mockResolvedValue(user);
+
+      await expect(
+        service.refreshAccessToken('user-id.wrong-secret'),
+      ).rejects.toThrow('Invalid refresh token');
+    });
+
+    it('should throw UnauthorizedException for expired refresh token', async () => {
+      const user = userWithHashFor(
+        'user-id.some-secret',
+        new Date(Date.now() - 1000), // already expired
+      );
+      mockUserService.getByUserId.mockResolvedValue(user);
+      mockUserService.update.mockImplementation(async (_id, u) => u);
+
+      await expect(
+        service.refreshAccessToken('user-id.some-secret'),
+      ).rejects.toThrow('Refresh token expired');
+      // Should have wiped the token
+      expect(mockUserService.update).toHaveBeenCalledWith(
+        'user-id',
+        expect.objectContaining({
+          refreshTokenHash: null,
+          refreshTokenExpiry: null,
+        }),
+      );
+    });
+
+    it('should throw UnauthorizedException if user has no refresh token', async () => {
+      const user = new User(
+        'Test',
+        'testuser',
+        'test@test.com',
+        'hashedpassword',
+      );
+      user.id = 'user-id';
+      // No refresh token fields set
+
+      mockUserService.getByUserId.mockResolvedValue(user);
+
+      await expect(
+        service.refreshAccessToken('user-id.some-secret'),
+      ).rejects.toThrow('Invalid refresh token');
+    });
+
+    it('should throw UnauthorizedException if user not found', async () => {
+      mockUserService.getByUserId.mockResolvedValue(null);
+
+      await expect(
+        service.refreshAccessToken('nonexistent.some-secret'),
+      ).rejects.toThrow('Invalid refresh token');
+    });
+
+    it('should throw UnauthorizedException if token is malformed (no separator)', async () => {
+      await expect(
+        service.refreshAccessToken('no-separator-here'),
+      ).rejects.toThrow('Invalid refresh token');
+      expect(mockUserService.getByUserId).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException if token has empty userId portion', async () => {
+      await expect(service.refreshAccessToken('.secret')).rejects.toThrow(
+        'Invalid refresh token',
+      );
+      expect(mockUserService.getByUserId).not.toHaveBeenCalled();
+    });
+
+    // ----- Rotation invariants -----------------------------------------------
+
+    it('should rotate: persisted hash after refresh matches the NEW token', async () => {
+      const oldToken = 'user-id.old-secret';
+      const user = userWithHashFor(oldToken, new Date(Date.now() + 1000 * 60 * 60));
+
+      // Store the user state mongo would persist.
+      let persisted: User = user;
+      mockUserService.getByUserId.mockImplementation(async () => persisted);
+      mockUserService.update.mockImplementation(async (_id, u) => {
+        persisted = u;
+        return u;
+      });
+      mockJwtService.sign.mockReturnValue('new-access-token');
+      (uuidv4 as jest.Mock).mockReturnValue('new-secret');
+
+      const result = await service.refreshAccessToken(oldToken);
+
+      // Persisted hash should now correspond to the brand-new token, not the
+      // old one — that's what makes the old token unusable.
+      expect(persisted.refreshTokenHash).toBe(sha256Hex(result.refresh_token));
+      expect(persisted.refreshTokenHash).not.toBe(sha256Hex(oldToken));
+    });
+
+    it('should reject the old token after a successful rotation', async () => {
+      const oldToken = 'user-id.old-secret';
+      const newToken = 'user-id.new-secret';
+      let persisted: User = userWithHashFor(
+        oldToken,
+        new Date(Date.now() + 1000 * 60 * 60),
+      );
+
+      mockUserService.getByUserId.mockImplementation(async () => persisted);
+      mockUserService.update.mockImplementation(async (_id, u) => {
+        persisted = u;
+        return u;
+      });
+      mockJwtService.sign.mockReturnValue('new-access-token');
+      (uuidv4 as jest.Mock).mockReturnValue('new-secret');
+
+      // 1) First refresh succeeds.
+      const result = await service.refreshAccessToken(oldToken);
+      expect(result.refresh_token).toBe(newToken);
+
+      // 2) Replaying the old token must now fail.
+      await expect(service.refreshAccessToken(oldToken)).rejects.toThrow(
+        'Invalid refresh token',
+      );
+    });
+
+    it('should reject the refresh token after logout', async () => {
+      const token = 'user-id.some-secret';
+      let persisted: User = userWithHashFor(
+        token,
+        new Date(Date.now() + 1000 * 60 * 60),
+      );
+
+      mockUserService.getByUserId.mockImplementation(async () => persisted);
+      mockUserService.update.mockImplementation(async (_id, u) => {
+        persisted = u;
+        return u;
+      });
+
+      await service.logout('user-id');
+      expect(persisted.refreshTokenHash).toBeNull();
+      expect(persisted.refreshTokenExpiry).toBeNull();
+
+      await expect(service.refreshAccessToken(token)).rejects.toThrow(
+        'Invalid refresh token',
+      );
+    });
+  });
+
+  describe('logout', () => {
+    it('should clear the refresh token for the user', async () => {
+      const user = new User(
+        'Test',
+        'testuser',
+        'test@test.com',
+        'hashedpassword',
+      );
+      user.id = 'user-id';
+      user.refreshTokenHash = 'hashed-refresh';
+      user.refreshTokenExpiry = new Date();
+
+      mockUserService.getByUserId.mockResolvedValue(user);
+      mockUserService.update.mockImplementation(async (_id, u) => u);
+
+      await service.logout('user-id');
+
+      expect(mockUserService.update).toHaveBeenCalledWith(
+        'user-id',
+        expect.objectContaining({
+          refreshTokenHash: null,
+          refreshTokenExpiry: null,
+        }),
+      );
+    });
+
+    it('should not throw if user not found', async () => {
+      mockUserService.getByUserId.mockResolvedValue(null);
+      await expect(service.logout('nonexistent')).resolves.toBeUndefined();
     });
   });
 });
