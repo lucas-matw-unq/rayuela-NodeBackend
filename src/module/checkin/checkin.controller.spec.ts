@@ -33,12 +33,43 @@ describe('CheckinController', () => {
   });
 
   describe('create', () => {
-    it('should call service.create', async () => {
-      const dto: CreateCheckinDto = { userId: '1', projectId: '1' } as any;
-      const req = { user: { userId: '1' } };
-      const file = { buffer: Buffer.from('test') } as any;
-      await controller.create(dto, req, file);
-      expect(service.create).toHaveBeenCalled();
+    const fakeRes: any = { setHeader: jest.fn() };
+
+    it('should call service.create with the request user and idempotency key', async () => {
+      const dto: CreateCheckinDto = { userId: '', projectId: '1' } as any;
+      const req = { user: { userId: 'u1' } };
+      const files = [{ buffer: Buffer.from('test') }] as any;
+      mockCheckinService.create.mockResolvedValueOnce({
+        id: 'new',
+        replayed: false,
+      });
+
+      await controller.create(dto, req, files, 'idem-1', fakeRes);
+
+      expect(dto.userId).toBe('u1');
+      expect(service.create).toHaveBeenCalledWith({
+        createCheckinDto: dto,
+        files,
+        idempotencyKey: 'idem-1',
+      });
+      // No replay → no header.
+      expect(fakeRes.setHeader).not.toHaveBeenCalled();
+    });
+
+    it('emits X-Original-Resource on a replayed response', async () => {
+      const dto: CreateCheckinDto = { userId: '', projectId: '1' } as any;
+      const req = { user: { userId: 'u1' } };
+      mockCheckinService.create.mockResolvedValueOnce({
+        id: 'old-checkin',
+        replayed: true,
+      });
+
+      await controller.create(dto, req, [], 'idem-2', fakeRes);
+
+      expect(fakeRes.setHeader).toHaveBeenCalledWith(
+        'X-Original-Resource',
+        'old-checkin',
+      );
     });
   });
 

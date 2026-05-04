@@ -11,12 +11,21 @@ import { MoveSchema, MoveTemplate } from './persistence/move.schema';
 import { MoveDao } from './persistence/move.dao';
 import { GamificationModule } from '../gamification/gamification.module';
 import { StorageModule } from '../storage/storage.module';
+import {
+  CheckinIdempotencySchema,
+  CheckinIdempotencyTemplate,
+} from './persistence/checkin-idempotency.schema';
+import { CheckinIdempotencyDao } from './persistence/checkin-idempotency.dao';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: CheckInTemplate.collectionName(), schema: CheckInSchema },
       { name: MoveTemplate.collectionName(), schema: MoveSchema },
+      {
+        name: CheckinIdempotencyTemplate.collectionName(),
+        schema: CheckinIdempotencySchema,
+      },
     ]),
     AuthModule,
     TaskModule,
@@ -27,6 +36,6 @@ import { StorageModule } from '../storage/storage.module';
 
   exports: [CheckinService],
   controllers: [CheckinController],
-  providers: [CheckinService, CheckInDao, MoveDao],
+  providers: [CheckinService, CheckInDao, MoveDao, CheckinIdempotencyDao],
 })
 export class CheckinModule {}

@@ -13,6 +13,7 @@ import { GamificationModule } from './module/gamification/gamification.module';
 import { LeaderboardModule } from './module/leaderboard/leaderboard.module';
 import { StorageModule } from './module/storage/storage.module';
 import { AnalyticsModule } from './module/analytics/analytics.module';
+import { HealthModule } from './module/health/health.module';
 
 console.log(process.env.DB_CONNECTION as string);
 @Module({
@@ -31,6 +32,7 @@ console.log(process.env.DB_CONNECTION as string);
     LeaderboardModule,
     StorageModule,
     AnalyticsModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -40,4 +42,3 @@ export class AppModule implements NestModule {
     consumer.apply(LoggerMiddleware).forRoutes('*');
   }
 }
-

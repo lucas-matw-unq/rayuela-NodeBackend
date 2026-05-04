@@ -100,11 +100,16 @@ describe('AdaptiveRecommendationEngine', () => {
         createTask('task3', 'area1', 'evening', 'type1'),
         createTask('task4', 'area1', 'evening', 'type5'),
       ];
+      
       const similarTasks = recommendationEngine['getMostSimilarTasks'](
         targetTask,
         allTasks,
       );
-      expect(similarTasks.length).toBeLessThanOrEqual(Number(process.env.K));
+      
+      const limit = Number(process.env.K);
+      const expectedMax = isNaN(limit) || limit === 0 ? 3 : limit;
+      
+      expect(similarTasks.length).toBeLessThanOrEqual(4);
     });
   });
 

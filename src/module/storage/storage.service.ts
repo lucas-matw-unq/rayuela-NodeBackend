@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
@@ -27,7 +31,9 @@ export class StorageService {
     });
 
     if (!endpoint || !accessKeyId || !secretAccessKey || !this.bucketName) {
-      this.logger.warn('S3 Storage configuration is incomplete. Image uploads may fail.');
+      this.logger.warn(
+        'S3 Storage configuration is incomplete. Image uploads may fail.',
+      );
     }
   }
 

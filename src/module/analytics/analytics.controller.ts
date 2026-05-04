@@ -27,7 +27,12 @@ export class AnalyticsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<TimeSeries[]> {
-    return this.analyticsService.getCheckinsOverTime(projectId, granularity, startDate, endDate);
+    return this.analyticsService.getCheckinsOverTime(
+      projectId,
+      granularity,
+      startDate,
+      endDate,
+    );
   }
 
   @Get('active-users-over-time')
@@ -37,7 +42,12 @@ export class AnalyticsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<ActiveUsersSeries[]> {
-    return this.analyticsService.getActiveUsersOverTime(projectId, granularity, startDate, endDate);
+    return this.analyticsService.getActiveUsersOverTime(
+      projectId,
+      granularity,
+      startDate,
+      endDate,
+    );
   }
 
   @Get('by-strategy')
@@ -52,7 +62,12 @@ export class AnalyticsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<PointsSeries[]> {
-    return this.analyticsService.getPointsOverTime(projectId, granularity, startDate, endDate);
+    return this.analyticsService.getPointsOverTime(
+      projectId,
+      granularity,
+      startDate,
+      endDate,
+    );
   }
 
   @Get('contribution-rate')
@@ -69,7 +84,12 @@ export class AnalyticsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ): Promise<TimeSeries[]> {
-    return this.analyticsService.getBadgeAcquisitionOverTime(projectId, granularity, startDate, endDate);
+    return this.analyticsService.getBadgeAcquisitionOverTime(
+      projectId,
+      granularity,
+      startDate,
+      endDate,
+    );
   }
 
   @Get('summary')

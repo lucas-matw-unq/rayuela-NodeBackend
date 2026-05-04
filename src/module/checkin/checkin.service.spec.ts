@@ -14,6 +14,8 @@ import ProjectBuilder from '../project/project.builder';
 import TaskBuilder from '../task/task.builder';
 import CheckinBuilder from './checkin.builder';
 import { StorageService } from '../storage/storage.service';
+import { CheckinIdempotencyDao } from './persistence/checkin-idempotency.dao';
+import { ConflictException } from '@nestjs/common';
 
 const mockCheckInDao = {
   create: jest.fn(),
@@ -22,6 +24,11 @@ const mockCheckInDao = {
   update: jest.fn(),
   remove: jest.fn(),
   findByProjectId: jest.fn(),
+};
+
+const mockIdempotencyDao = {
+  findByKey: jest.fn(),
+  record: jest.fn(),
 };
 
 const mockStorageService = {
@@ -82,11 +89,14 @@ describe('CheckinService', () => {
           provide: GamificationEngineFactory,
           useValue: mockGamificationFactory,
         },
+        { provide: CheckinIdempotencyDao, useValue: mockIdempotencyDao },
       ],
     }).compile();
 
     service = module.get<CheckinService>(CheckinService);
     jest.clearAllMocks();
+    // Default: no key recorded.
+    mockIdempotencyDao.findByKey.mockResolvedValue(null);
   });
 
   it('should be defined', () => {
@@ -139,7 +149,7 @@ describe('CheckinService', () => {
           mimetype: 'image/jpeg',
         },
       ] as any[];
-      
+
       mockStorageService.uploadFile
         .mockResolvedValueOnce('ref1')
         .mockResolvedValueOnce('ref2');
@@ -152,16 +162,22 @@ describe('CheckinService', () => {
       expect(mockCheckInDao.create).toHaveBeenCalled();
       expect(mockMoveDao.create).toHaveBeenCalled();
       expect(mockStorageService.uploadFile).toHaveBeenCalledTimes(2);
-      expect(mockStorageService.uploadFile).toHaveBeenCalledWith(files[0], 'checkins/user1');
-      expect(mockStorageService.uploadFile).toHaveBeenCalledWith(files[1], 'checkins/user1');
-      
+      expect(mockStorageService.uploadFile).toHaveBeenCalledWith(
+        files[0],
+        'checkins/user1',
+      );
+      expect(mockStorageService.uploadFile).toHaveBeenCalledWith(
+        files[1],
+        'checkins/user1',
+      );
+
       expect(task.setSolved).toHaveBeenCalledWith(true);
       expect(user.addContribution).toHaveBeenCalledWith('task1');
       expect(mockTaskService.setTaskAsSolved).toHaveBeenCalledWith('task1');
       expect(mockUserService.update).toHaveBeenCalledWith('user1', user);
       expect(mockGamificationService.saveMove).toHaveBeenCalled();
       expect(result).toHaveProperty('id', 'checkin1');
-      expect(result.contributesTo).toEqual({
+      expect((result as any).contributesTo).toEqual({
         name: 'Test Task',
         id: 'task1',
       });
@@ -210,7 +226,50 @@ describe('CheckinService', () => {
       expect(mockUserService.update).toHaveBeenCalledWith('user1', user);
       expect(mockGamificationService.saveMove).toHaveBeenCalled();
       expect(result).toHaveProperty('id', 'checkin1');
-      expect(result.contributesTo).toBe(undefined);
+      expect((result as any).contributesTo).toBe(undefined);
+    });
+
+    it('should throw UnauthorizedException if the project is not running', async () => {
+      const data = {
+        taskId: 'volunteering',
+        projectId: 'project123',
+        location: { latitude: '12', longitude: '34' },
+      };
+
+      // Declare the project variable before using it
+      const project = ProjectBuilder.build();
+      // Ensure the project is not running
+      (project as any).isRunning = jest.fn().mockReturnValue(false);
+
+      // Mock Project and Task for this test
+      project.id = 'project123';
+      project.name = 'Test Project';
+      (project as any).running = false; // Project is not running
+      (project as any).isRunning = jest.fn().mockReturnValue(false);
+
+      const task = TaskBuilder.withId('volunteering').build();
+
+      const user = new User(
+        'test@test.com',
+        'testuser',
+        'password',
+        'Test User',
+      );
+      user.id = 'user1';
+      user.addProject(project.id);
+
+      mockTaskService.findByProjectId.mockResolvedValue([task]);
+      mockUserService.getByUserId.mockResolvedValue(user);
+      mockUserService.findAllByProjectId.mockResolvedValue([user]);
+      mockProjectService.findOne.mockResolvedValue(project);
+      mockCheckInDao.create.mockResolvedValue({ _id: 'checkin1' });
+
+      await expect(service.create({ createCheckinDto: data as any })).rejects.toThrowError(
+        'The project is not running',
+      );
+
+      expect(mockCheckInDao.create).not.toHaveBeenCalled();
+      expect(mockMoveDao.create).not.toHaveBeenCalled();
     });
 
     it('should add badges to user if game results in new badges', async () => {
@@ -320,6 +379,114 @@ describe('CheckinService', () => {
         params.rate,
       );
       expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe('idempotency', () => {
+    const dto: CreateCheckinDto = {
+      datetime: new Date(),
+      taskType: '',
+      userId: 'user1',
+      projectId: 'project1',
+      latitude: '0',
+      longitude: '0',
+    };
+
+    it('replays the original response when the key has been seen for the same user', async () => {
+      mockIdempotencyDao.findByKey.mockResolvedValue({
+        key: 'k-1',
+        userId: 'user1',
+        checkinId: 'old-checkin',
+      });
+      
+      const relatedProject = {
+        name: 'The Mega Project',
+        id: 'proyecto1'
+      };
+      const relatedTaskObject = {
+        name: 'A task',
+        id: 'task-1'
+      };
+      
+      mockCheckInDao.findOne.mockResolvedValue({
+        id: 'old-checkin',
+        latitude: '0',
+        longitude: '0',
+        date: new Date(),
+        _relatedTask: relatedTaskObject,
+        contributesTo: relatedProject,
+        imageRefs: ['ref-original'],
+      });
+
+      const result = await service.create({
+        createCheckinDto: dto,
+        idempotencyKey: 'k-1', // FIX: ADDING THE MISSING IDEMPOTENCY KEY HERE!
+      });
+
+      expect((result as any).contributesTo).toEqual({
+        name: 'The Mega Project',
+        id: 'proyecto1',
+      });
+
+      // The replay path must NOT touch the create pipeline.
+      expect(mockTaskService.findByProjectId).not.toHaveBeenCalled();
+      expect(mockCheckInDao.create).not.toHaveBeenCalled();
+      expect(mockMoveDao.create).not.toHaveBeenCalled();
+      expect(mockIdempotencyDao.record).not.toHaveBeenCalled();
+
+      expect((result as any).replayed).toBe(true);
+      expect(result.id).toBe('old-checkin');
+      expect((result as any).checkin.imageRefs).toEqual(['ref-original']);
+      // Empty gameStatus on replay so the client can't double-count.
+      expect((result as any).gameStatus.newPoints).toBe(0);
+      expect((result as any).gameStatus.newBadges).toEqual([]);
+    });
+
+    it('throws ConflictException when the key was minted by another user', async () => {
+      mockIdempotencyDao.findByKey.mockResolvedValue({
+        key: 'k-1',
+        userId: 'someone-else',
+        checkinId: 'foreign',
+      });
+
+      await expect(
+        service.create({ createCheckinDto: dto, idempotencyKey: 'k-1' }),
+      ).rejects.toBeInstanceOf(ConflictException);
+
+      expect(mockCheckInDao.create).not.toHaveBeenCalled();
+    });
+
+    it('records the key after a successful first-time create', async () => {
+      mockIdempotencyDao.findByKey.mockResolvedValue(null);
+
+      const user = new User('a@b', 'u', 'p', 'U');
+      user.id = 'user1';
+      user.addBadgeFromProject = jest.fn();
+      user.addContribution = jest.fn();
+
+      const task = TaskBuilder.build();
+      jest.spyOn(task, 'contributesToCheckin').mockReturnValue(false);
+      jest.spyOn(task, 'setSolved');
+
+      const project = ProjectBuilder.build();
+      user.addProject(project.id);
+
+      mockTaskService.findByProjectId.mockResolvedValue([task]);
+      mockUserService.getByUserId.mockResolvedValue(user);
+      mockUserService.findAllByProjectId.mockResolvedValue([user]);
+      mockProjectService.findOne.mockResolvedValue(project);
+      mockCheckInDao.create.mockResolvedValue({ _id: 'fresh-checkin' });
+
+      await service.create({
+        createCheckinDto: dto,
+        idempotencyKey: 'k-new',
+      });
+
+      expect(mockIdempotencyDao.record).toHaveBeenCalledWith({
+        key: 'k-new',
+        userId: 'user1',
+        checkinId: 'fresh-checkin',
+      });
     });
   });
 });

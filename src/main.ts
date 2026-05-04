@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { MulterExceptionFilter } from './common/filters/multer-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -9,6 +10,10 @@ async function bootstrap() {
 
   // Prefijo global
   app.setGlobalPrefix('v1');
+
+  // Convert Multer's framework-level errors (file too big, wrong MIME)
+  // into clean HTTP responses so the mobile outbox can classify them.
+  app.useGlobalFilters(new MulterExceptionFilter());
 
   // Configuración de Swagger
   const config = new DocumentBuilder()

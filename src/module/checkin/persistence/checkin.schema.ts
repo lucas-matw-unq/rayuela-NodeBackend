@@ -49,7 +49,6 @@ export class CheckInTemplate {
     this.imageRefs = imageRefs || [];
   }
 
-
   static collectionName() {
     return 'Checkin';
   }

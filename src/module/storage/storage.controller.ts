@@ -11,9 +11,9 @@ export class StorageController {
   async getFile(@Query('key') key: string, @Res() res: Response) {
     try {
       const { body, contentType } = await this.storageService.getFile(key);
-      
+
       res.setHeader('Content-Type', contentType || 'application/octet-stream');
-      
+
       if (body instanceof Stream) {
         body.pipe(res);
       } else if (body && typeof body.pipe === 'function') {

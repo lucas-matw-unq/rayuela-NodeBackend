@@ -1,22 +1,31 @@
 import {
-  Controller,
-  Get,
-  Post,
+  BadRequestException,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UseGuards,
+  Get,
+  Headers,
+  Param,
+  Patch,
+  Post,
   Req,
-  UseInterceptors,
+  Res,
   UploadedFiles,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { CheckinService } from './checkin.service';
 import { CreateCheckinDto } from './dto/create-checkin.dto';
 import { UpdateCheckinDto } from './dto/update-checkin.dto';
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { MAX_IMAGES_PER_CHECKIN } from './checkin.constants';
+import {
+  ALLOWED_IMAGE_MIMES,
+  IDEMPOTENCY_HEADER,
+  MAX_IMAGES_PER_CHECKIN,
+  MAX_IMAGE_SIZE_BYTES,
+} from './checkin.constants';
 
 @Controller('checkin')
 export class CheckinController {
@@ -24,17 +33,47 @@ export class CheckinController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @UseInterceptors(FilesInterceptor('image', MAX_IMAGES_PER_CHECKIN))
+  @UseInterceptors(
+    FilesInterceptor('image', MAX_IMAGES_PER_CHECKIN, {
+      // Multer enforces this and emits a `MulterError('LIMIT_FILE_SIZE')`
+      // we map to HTTP 413 in `MulterExceptionFilter`.
+      limits: { fileSize: MAX_IMAGE_SIZE_BYTES },
+      fileFilter: (_req, file, cb) => {
+        if (ALLOWED_IMAGE_MIMES.has(file.mimetype)) {
+          cb(null, true);
+          return;
+        }
+        cb(
+          new BadRequestException(
+            `Unsupported image type: ${file.mimetype}. ` +
+              `Allowed: ${[...ALLOWED_IMAGE_MIMES].join(', ')}`,
+          ),
+          false,
+        );
+      },
+    }),
+  )
   async create(
     @Body() createCheckinDto: CreateCheckinDto,
     @Req() req: any,
     @UploadedFiles() files: Express.Multer.File[],
+    @Headers(IDEMPOTENCY_HEADER) idempotencyKey: string | undefined,
+    @Res({ passthrough: true }) res: Response,
   ) {
     createCheckinDto.userId = req.user.userId;
-    return this.checkinService.create({ createCheckinDto, files });
+    const result = await this.checkinService.create({
+      createCheckinDto,
+      files,
+      idempotencyKey,
+    });
+    // When the service replays a previously-stored idempotency key we
+    // surface it via a header so the mobile drainer (and any other
+    // automated client) can tell apart a fresh insert from a replay.
+    if (result && 'replayed' in result && result.replayed && typeof result.id === 'string') {
+      res.setHeader('X-Original-Resource', result.id);
+    }
+    return result;
   }
-
-
 
   @UseGuards(JwtAuthGuard)
   @Post('/rate')

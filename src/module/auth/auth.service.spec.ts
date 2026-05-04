@@ -20,8 +20,7 @@ jest.mock('@nestjs/jwt', () => ({
 }));
 
 // Refresh-token hashing is SHA-256 (real, deterministic) — no mocking needed.
-const sha256Hex = (s: string) =>
-  createHash('sha256').update(s).digest('hex');
+const sha256Hex = (s: string) => createHash('sha256').update(s).digest('hex');
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -162,7 +161,9 @@ describe('AuthService', () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedpassword');
       (uuidv4 as jest.Mock).mockReturnValue('test-token');
       mockUserService.create.mockResolvedValue(null);
-      mockTransporter.sendMail.mockRejectedValueOnce(new Error('SMTP auth error'));
+      mockTransporter.sendMail.mockRejectedValueOnce(
+        new Error('SMTP auth error'),
+      );
 
       await expect(service.register(registerDto)).rejects.toThrow(
         new BadRequestException('Error al enviar el correo de verificación'),
@@ -175,11 +176,15 @@ describe('AuthService', () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashedpassword');
       (uuidv4 as jest.Mock).mockReturnValue('test-token');
       mockUserService.create.mockResolvedValue(null);
-      mockTransporter.sendMail.mockRejectedValueOnce(new Error('SMTP auth error'));
+      mockTransporter.sendMail.mockRejectedValueOnce(
+        new Error('SMTP auth error'),
+      );
 
       const loggerErrorSpy = jest.spyOn(service['logger'], 'error');
 
-      await expect(service.register(registerDto)).rejects.toThrow(BadRequestException);
+      await expect(service.register(registerDto)).rejects.toThrow(
+        BadRequestException,
+      );
       expect(loggerErrorSpy).toHaveBeenCalled();
     });
   });
@@ -293,7 +298,9 @@ describe('AuthService', () => {
       user.id = 'user-id';
       mockUserService.findByGoogleId.mockResolvedValue(null);
       mockUserService.findByEmailOrUsername.mockResolvedValue(user);
-      mockUserService.update.mockImplementation(async (_id, updatedUser) => updatedUser);
+      mockUserService.update.mockImplementation(
+        async (_id, updatedUser) => updatedUser,
+      );
       mockJwtService.sign.mockReturnValue('google-token');
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
@@ -367,7 +374,9 @@ describe('AuthService', () => {
         }),
       });
 
-      await expect(service.authenticateWithGoogle('credential')).rejects.toMatchObject({
+      await expect(
+        service.authenticateWithGoogle('credential'),
+      ).rejects.toMatchObject({
         response: {
           message: 'Username is required for new Google signup',
           requiresUsername: true,
@@ -420,7 +429,9 @@ describe('AuthService', () => {
       mockUserService.findByGoogleId.mockResolvedValue(null);
       mockUserService.findByEmailOrUsername
         .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(new User('Taken', 'taken-user', 'taken@test.com', 'password'));
+        .mockResolvedValueOnce(
+          new User('Taken', 'taken-user', 'taken@test.com', 'password'),
+        );
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: async () => ({
@@ -439,9 +450,9 @@ describe('AuthService', () => {
         ok: false,
       });
 
-      await expect(service.authenticateWithGoogle('credential')).rejects.toThrow(
-        'Invalid Google credentials',
-      );
+      await expect(
+        service.authenticateWithGoogle('credential'),
+      ).rejects.toThrow('Invalid Google credentials');
     });
   });
 
@@ -493,11 +504,15 @@ describe('AuthService', () => {
       user.id = 'user-id';
       mockUserService.findByEmailOrUsername.mockResolvedValue(user);
       (uuidv4 as jest.Mock).mockReturnValue('reset-token');
-      mockTransporter.sendMail.mockRejectedValueOnce(new Error('SMTP auth error'));
+      mockTransporter.sendMail.mockRejectedValueOnce(
+        new Error('SMTP auth error'),
+      );
 
       const loggerErrorSpy = jest.spyOn(service['logger'], 'error');
 
-      await expect(service.forgotPassword('test@test.com')).resolves.toBeUndefined();
+      await expect(
+        service.forgotPassword('test@test.com'),
+      ).resolves.toBeUndefined();
       expect(loggerErrorSpy).toHaveBeenCalled();
     });
 
@@ -575,7 +590,10 @@ describe('AuthService', () => {
 
     it('should return new tokens for a valid refresh token', async () => {
       const validToken = 'user-id.valid-secret';
-      const user = userWithHashFor(validToken, new Date(Date.now() + 1000 * 60 * 60));
+      const user = userWithHashFor(
+        validToken,
+        new Date(Date.now() + 1000 * 60 * 60),
+      );
 
       mockUserService.getByUserId.mockResolvedValue(user);
       mockJwtService.sign.mockReturnValue('new-access-token');
@@ -670,7 +688,10 @@ describe('AuthService', () => {
 
     it('should rotate: persisted hash after refresh matches the NEW token', async () => {
       const oldToken = 'user-id.old-secret';
-      const user = userWithHashFor(oldToken, new Date(Date.now() + 1000 * 60 * 60));
+      const user = userWithHashFor(
+        oldToken,
+        new Date(Date.now() + 1000 * 60 * 60),
+      );
 
       // Store the user state mongo would persist.
       let persisted: User = user;

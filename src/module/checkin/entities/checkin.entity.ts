@@ -105,7 +105,6 @@ export class Checkin {
     this.#imageRefs = imageRefs || [];
   }
 
-
   validateContribution(id: string): void {
     this.#contributesTo = id;
   }
