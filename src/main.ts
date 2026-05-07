@@ -17,8 +17,10 @@ async function bootstrap() {
     ],
   });
 
-  // Convert Multer's framework-level errors (file too big, wrong MIME)
+  // Convert Multer framework-level errors (for example, file too big)
   // into clean HTTP responses so the mobile outbox can classify them.
+  // Note: MIME rejections raised as BadRequestException are not handled
+  // by MulterExceptionFilter unless they are normalized elsewhere.
   app.useGlobalFilters(new MulterExceptionFilter());
 
   // Configuración de Swagger
