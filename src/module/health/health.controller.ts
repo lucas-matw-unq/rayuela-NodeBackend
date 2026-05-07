@@ -7,14 +7,13 @@ import { Controller, Get, Head, Header, HttpCode } from '@nestjs/common';
  *
  *   * unauthenticated — the probe runs before login during cold start;
  *   * cheap — no DB call, no logging, no auth chain;
- *   * cacheable for at most a few seconds so an aggressive client can't
- *     accidentally DDoS itself through a stale cache.
+ *   * non-cacheable so each probe reflects current reachability.
  */
 @Controller('health')
 export class HealthController {
   /**
-   * `HEAD /health` is the cheapest probe; we route it explicitly so
-   * Express doesn't fall through to the catch-all and emit a 405.
+   * `HEAD /health` is the cheapest probe; it is excluded from the
+   * global `/v1` prefix in `main.ts`.
    */
   @Head()
   @HttpCode(204)
