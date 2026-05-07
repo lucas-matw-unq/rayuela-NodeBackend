@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -15,6 +14,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { MulterError } from 'multer';
 import { CheckinService } from './checkin.service';
 import { CreateCheckinDto } from './dto/create-checkin.dto';
 import { UpdateCheckinDto } from './dto/update-checkin.dto';
@@ -43,13 +43,11 @@ export class CheckinController {
           cb(null, true);
           return;
         }
-        cb(
-          new BadRequestException(
-            `Unsupported image type: ${file.mimetype}. ` +
-              `Allowed: ${[...ALLOWED_IMAGE_MIMES].join(', ')}`,
-          ),
-          false,
-        );
+        const error = new MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname);
+        error.message =
+          `Unsupported image type: ${file.mimetype}. ` +
+          `Allowed: ${[...ALLOWED_IMAGE_MIMES].join(', ')}`;
+        cb(error, false);
       },
     }),
   )

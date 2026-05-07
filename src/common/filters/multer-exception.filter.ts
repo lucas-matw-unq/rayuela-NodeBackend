@@ -16,7 +16,7 @@ import { MulterError } from 'multer';
  * Currently handled:
  *   * `LIMIT_FILE_SIZE`   → 413 Payload Too Large
  *   * `LIMIT_FILE_COUNT`  → 413
- *   * `LIMIT_UNEXPECTED_FILE` (wrong field name) → 400
+ *   * `LIMIT_UNEXPECTED_FILE` (wrong field name or MIME rejection) → 400
  *   * everything else     → 400 with the underlying message
  */
 @Catch(MulterError)

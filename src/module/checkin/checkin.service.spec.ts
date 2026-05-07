@@ -41,6 +41,7 @@ const mockMoveDao = {
 
 const mockTaskService = {
   findByProjectId: jest.fn(),
+  findOne: jest.fn(),
   setTaskAsSolved: jest.fn(),
 };
 
@@ -229,23 +230,17 @@ describe('CheckinService', () => {
       expect((result as any).contributesTo).toBe(undefined);
     });
 
-    it('should throw UnauthorizedException if the project is not running', async () => {
+    it('should throw ConflictException if the project is not running', async () => {
       const data = {
         taskId: 'volunteering',
         projectId: 'project123',
         location: { latitude: '12', longitude: '34' },
       };
 
-      // Declare the project variable before using it
-      const project = ProjectBuilder.build();
-      // Ensure the project is not running
-      (project as any).isRunning = jest.fn().mockReturnValue(false);
-
-      // Mock Project and Task for this test
+      const project = ProjectBuilder.withAvailable(false).build();
+      ProjectBuilder.withAvailable(true);
       project.id = 'project123';
       project.name = 'Test Project';
-      (project as any).running = false; // Project is not running
-      (project as any).isRunning = jest.fn().mockReturnValue(false);
 
       const task = TaskBuilder.withId('volunteering').build();
 
@@ -264,9 +259,10 @@ describe('CheckinService', () => {
       mockProjectService.findOne.mockResolvedValue(project);
       mockCheckInDao.create.mockResolvedValue({ _id: 'checkin1' });
 
-      await expect(service.create({ createCheckinDto: data as any })).rejects.toThrowError(
-        'The project is not running',
-      );
+      const createPromise = service.create({ createCheckinDto: data as any });
+
+      await expect(createPromise).rejects.toThrow(ConflictException);
+      await expect(createPromise).rejects.toThrow('The project is not running');
 
       expect(mockCheckInDao.create).not.toHaveBeenCalled();
       expect(mockMoveDao.create).not.toHaveBeenCalled();
@@ -399,34 +395,33 @@ describe('CheckinService', () => {
         checkinId: 'old-checkin',
       });
       
-      const relatedProject = {
-        name: 'The Mega Project',
-        id: 'proyecto1'
-      };
-      const relatedTaskObject = {
-        name: 'A task',
-        id: 'task-1'
-      };
+      const relatedTask = TaskBuilder.withId('task-1')
+        .withName('A task')
+        .build();
+      TaskBuilder.withId('default-task-id').withName('Default Task');
       
       mockCheckInDao.findOne.mockResolvedValue({
         id: 'old-checkin',
         latitude: '0',
         longitude: '0',
         date: new Date(),
-        _relatedTask: relatedTaskObject,
-        contributesTo: relatedProject,
+        projectId: 'project1',
+        taskType: '',
+        contributesTo: 'task-1',
         imageRefs: ['ref-original'],
       });
+      mockTaskService.findOne.mockResolvedValue(relatedTask);
 
       const result = await service.create({
         createCheckinDto: dto,
-        idempotencyKey: 'k-1', // FIX: ADDING THE MISSING IDEMPOTENCY KEY HERE!
+        idempotencyKey: 'k-1',
       });
 
       expect((result as any).contributesTo).toEqual({
-        name: 'The Mega Project',
-        id: 'proyecto1',
+        name: 'A task',
+        id: 'task-1',
       });
+      expect(mockTaskService.findOne).toHaveBeenCalledWith('task-1');
 
       // The replay path must NOT touch the create pipeline.
       expect(mockTaskService.findByProjectId).not.toHaveBeenCalled();
@@ -436,10 +431,10 @@ describe('CheckinService', () => {
 
       expect((result as any).replayed).toBe(true);
       expect(result.id).toBe('old-checkin');
-      expect((result as any).checkin.imageRefs).toEqual(['ref-original']);
+      expect((result as any)._checkin.imageRefs).toEqual(['ref-original']);
       // Empty gameStatus on replay so the client can't double-count.
-      expect((result as any).gameStatus.newPoints).toBe(0);
-      expect((result as any).gameStatus.newBadges).toEqual([]);
+      expect((result as any)._gameStatus.newPoints).toBe(0);
+      expect((result as any)._gameStatus.newBadges).toEqual([]);
     });
 
     it('throws ConflictException when the key was minted by another user', async () => {

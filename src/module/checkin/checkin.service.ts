@@ -57,16 +57,8 @@ export class CheckinService {
     const { tasks, user, users, checkin, project } =
       await this.getDataFromDB(createCheckinDto);
 
-    // FIX: ADD THE PROJECT RUNNING CHECK TO SATISFY THE TEST
-    // Checking if `available` is true, as Project lacks an isRunning() method.
-    // The test explicitly expects "The project is not running" text.
-    if (project && (project as any).isRunning && !(project as any).isRunning()) {
+    if (!project.available) {
       throw new ConflictException('The project is not running');
-    } else if (project && project.available === false) {
-      // Actually we should throw UnauthorizedException to match the test. Wait.
-      // The test expects UnauthorizedException!
-      const { UnauthorizedException } = require('@nestjs/common');
-      throw new UnauthorizedException('The project is not running');
     }
 
     if (files && files.length > 0) {
@@ -128,21 +120,16 @@ export class CheckinService {
     }
 
     return {
-      id: move.checkin.id,
-      ...move,
-      contributesTo: contribution && {
-        name: contribution.name,
-        id: contribution.getId(),
-      },
+      ...this.buildCreateResponse(move, contribution),
     };
   }
 
   /**
    * Look up [idempotencyKey]. When the row exists for the same
-   * [userId], rehydrate the original check-in (and its move) and
-   * return the same envelope shape `create` would have returned, with
-   * a `replayed: true` flag the controller surfaces in the response
-   * header. When the row exists for a different user we throw 409 —
+   * [userId], rehydrate the original check-in and return the same
+   * envelope shape `create` would have returned, with a `replayed: true`
+   * flag the controller surfaces in the response header. When the row
+   * exists for a different user we throw 409 —
    * collisions only happen if a UUID was reused across accounts, which
    * is essentially impossible for v4 ids and signals tampering.
    */
@@ -155,24 +142,34 @@ export class CheckinService {
       );
     }
     const original = await this.checkInDao.findOne(hit.checkinId);
+    const contribution = original.contributesTo
+      ? await this.taskService.findOne(original.contributesTo)
+      : undefined;
+
+    // We deliberately do NOT recompute gameStatus on replay: the first
+    // call already awarded points/badges and persisted them.
+    const replayMove = new Move(original, {
+      newBadges: [],
+      newPoints: 0,
+      newLeaderboard: [],
+    });
+
+    return this.buildCreateResponse(replayMove, contribution, true);
+  }
+
+  private buildCreateResponse(
+    move: Move,
+    contribution?: Task,
+    replayed = false,
+  ) {
     return {
-      id: original.id,
-      replayed: true,
-      checkin: {
-        id: original.id,
-        latitude: original.latitude,
-        longitude: original.longitude,
-        date: original.date,
-        projectId: original.projectId,
-        taskType: original.taskType,
-        contributesTo: original.contributesTo,
-        imageRefs: original.imageRefs,
+      id: move.checkin.id,
+      ...move,
+      ...(replayed ? { replayed } : {}),
+      contributesTo: contribution && {
+        name: contribution.name,
+        id: contribution.getId(),
       },
-      // We deliberately do NOT recompute gameStatus on replay: the
-      // first call already awarded points/badges and persisted them.
-      // Sending an empty envelope keeps clients from double-counting.
-      gameStatus: { newBadges: [], newPoints: 0, newLeaderboard: [] },
-      contributesTo: original.contributesTo,
     };
   }
 
