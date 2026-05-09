@@ -6,4 +6,5 @@ This repository contains the NestJS-based REST API and management backend for th
 
 ## Quick Links
 - [Deployment](deployment)
+- [Mobile Architecture](mobile/)
 - [GitHub Repository](https://github.com/lucas-matw-unq/rayuela-NodeBackend)
