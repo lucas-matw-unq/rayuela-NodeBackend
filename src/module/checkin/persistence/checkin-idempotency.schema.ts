@@ -23,9 +23,12 @@ export class CheckinIdempotencyTemplate {
   @Prop({ required: true })
   userId: string;
 
-  /** Id of the [Checkin] resource the original POST created. */
-  @Prop({ required: true })
-  checkinId: string;
+  /**
+   * Id of the [Checkin] resource the original POST created.
+   * Absent while the first request is still processing (status: pending).
+   */
+  @Prop()
+  checkinId?: string;
 
   @Prop({ type: Date, default: Date.now })
   createdAt: Date;

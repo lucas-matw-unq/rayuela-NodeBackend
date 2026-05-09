@@ -47,11 +47,21 @@ export class CheckinService {
     const { createCheckinDto, files, idempotencyKey } = params;
 
     if (idempotencyKey) {
-      const replay = await this.maybeReplay(
+      const claim = await this.idempotencyDao.claimKey(
         idempotencyKey,
         createCheckinDto.userId,
       );
-      if (replay) return replay;
+      if (claim !== null) {
+        // Key was already claimed by this user.
+        if (!claim.checkinId) {
+          // Another request is still processing — tell the client to retry.
+          throw new ConflictException(
+            'Idempotency-Key is already being processed, retry shortly',
+          );
+        }
+        return this.replayFromHit(claim as { checkinId: string });
+      }
+      // claim === null → we won the race, proceed with create.
     }
 
     const { tasks, user, users, checkin, project } =
@@ -102,21 +112,10 @@ export class CheckinService {
     await this.gamificationService.saveMove(move);
 
     if (idempotencyKey) {
-      // Best-effort: the row is created; record the key so future
-      // retries replay this same result. A duplicate-key error means
-      // another concurrent request already won the race for the same
-      // key + user, which is fine.
-      try {
-        await this.idempotencyDao.record({
-          key: idempotencyKey,
-          userId: createCheckinDto.userId,
-          checkinId: String(checkin.id),
-        });
-      } catch (e) {
-        this.logger.warn(
-          `Idempotency key ${idempotencyKey} could not be recorded: ${e}`,
-        );
-      }
+      await this.idempotencyDao.setCheckinId(
+        idempotencyKey,
+        String(checkin.id),
+      );
     }
 
     return {
@@ -125,29 +124,17 @@ export class CheckinService {
   }
 
   /**
-   * Look up [idempotencyKey]. When the row exists for the same
-   * [userId], rehydrate the original check-in and return the same
-   * envelope shape `create` would have returned, with a `replayed: true`
-   * flag the controller surfaces in the response header. When the row
-   * exists for a different user we throw 409 —
-   * collisions only happen if a UUID was reused across accounts, which
-   * is essentially impossible for v4 ids and signals tampering.
+   * Rehydrate the original check-in from an idempotency hit and return
+   * the same response envelope `create` would have produced.
+   * Game status is zeroed out — points/badges were already awarded on the
+   * first call and must not be double-counted.
    */
-  private async maybeReplay(idempotencyKey: string, userId: string) {
-    const hit = await this.idempotencyDao.findByKey(idempotencyKey);
-    if (!hit) return null;
-    if (hit.userId !== userId) {
-      throw new ConflictException(
-        'Idempotency-Key is already in use by another account',
-      );
-    }
+  private async replayFromHit(hit: { checkinId: string }) {
     const original = await this.checkInDao.findOne(hit.checkinId);
     const contribution = original.contributesTo
       ? await this.taskService.findOne(original.contributesTo)
       : undefined;
 
-    // We deliberately do NOT recompute gameStatus on replay: the first
-    // call already awarded points/badges and persisted them.
     const replayMove = new Move(original, {
       newBadges: [],
       newPoints: 0,

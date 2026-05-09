@@ -27,8 +27,8 @@ const mockCheckInDao = {
 };
 
 const mockIdempotencyDao = {
-  findByKey: jest.fn(),
-  record: jest.fn(),
+  claimKey: jest.fn(),
+  setCheckinId: jest.fn(),
 };
 
 const mockStorageService = {
@@ -96,8 +96,8 @@ describe('CheckinService', () => {
 
     service = module.get<CheckinService>(CheckinService);
     jest.clearAllMocks();
-    // Default: no key recorded.
-    mockIdempotencyDao.findByKey.mockResolvedValue(null);
+    // Default: no key claimed yet → caller wins the race.
+    mockIdempotencyDao.claimKey.mockResolvedValue(null);
   });
 
   it('should be defined', () => {
@@ -388,18 +388,19 @@ describe('CheckinService', () => {
       longitude: '0',
     };
 
-    it('replays the original response when the key has been seen for the same user', async () => {
-      mockIdempotencyDao.findByKey.mockResolvedValue({
+    it('replays the original response when claimKey returns a completed hit', async () => {
+      // claimKey returns a hit → key already processed for this user.
+      mockIdempotencyDao.claimKey.mockResolvedValue({
         key: 'k-1',
         userId: 'user1',
         checkinId: 'old-checkin',
       });
-      
+
       const relatedTask = TaskBuilder.withId('task-1')
         .withName('A task')
         .build();
       TaskBuilder.withId('default-task-id').withName('Default Task');
-      
+
       mockCheckInDao.findOne.mockResolvedValue({
         id: 'old-checkin',
         latitude: '0',
@@ -427,7 +428,7 @@ describe('CheckinService', () => {
       expect(mockTaskService.findByProjectId).not.toHaveBeenCalled();
       expect(mockCheckInDao.create).not.toHaveBeenCalled();
       expect(mockMoveDao.create).not.toHaveBeenCalled();
-      expect(mockIdempotencyDao.record).not.toHaveBeenCalled();
+      expect(mockIdempotencyDao.setCheckinId).not.toHaveBeenCalled();
 
       expect((result as any).replayed).toBe(true);
       expect(result.id).toBe('old-checkin');
@@ -438,11 +439,12 @@ describe('CheckinService', () => {
     });
 
     it('throws ConflictException when the key was minted by another user', async () => {
-      mockIdempotencyDao.findByKey.mockResolvedValue({
-        key: 'k-1',
-        userId: 'someone-else',
-        checkinId: 'foreign',
-      });
+      // claimKey itself throws when userId does not match.
+      mockIdempotencyDao.claimKey.mockRejectedValue(
+        new ConflictException(
+          'Idempotency-Key already used by another account',
+        ),
+      );
 
       await expect(
         service.create({ createCheckinDto: dto, idempotencyKey: 'k-1' }),
@@ -451,8 +453,26 @@ describe('CheckinService', () => {
       expect(mockCheckInDao.create).not.toHaveBeenCalled();
     });
 
-    it('records the key after a successful first-time create', async () => {
-      mockIdempotencyDao.findByKey.mockResolvedValue(null);
+    it('throws ConflictException when key is claimed but checkin is still in-flight', async () => {
+      // claimKey returns a hit with no checkinId → another request is processing.
+      mockIdempotencyDao.claimKey.mockResolvedValue({
+        key: 'k-pending',
+        userId: 'user1',
+        checkinId: undefined,
+      });
+
+      await expect(
+        service.create({ createCheckinDto: dto, idempotencyKey: 'k-pending' }),
+      ).rejects.toThrow(
+        'Idempotency-Key is already being processed, retry shortly',
+      );
+
+      expect(mockCheckInDao.create).not.toHaveBeenCalled();
+    });
+
+    it('calls setCheckinId after a successful first-time create', async () => {
+      // claimKey returns null → this request won the race.
+      mockIdempotencyDao.claimKey.mockResolvedValue(null);
 
       const user = new User('a@b', 'u', 'p', 'U');
       user.id = 'user1';
@@ -477,11 +497,10 @@ describe('CheckinService', () => {
         idempotencyKey: 'k-new',
       });
 
-      expect(mockIdempotencyDao.record).toHaveBeenCalledWith({
-        key: 'k-new',
-        userId: 'user1',
-        checkinId: 'fresh-checkin',
-      });
+      expect(mockIdempotencyDao.setCheckinId).toHaveBeenCalledWith(
+        'k-new',
+        'fresh-checkin',
+      );
     });
   });
 });

@@ -6,11 +6,10 @@ import {
   CheckinIdempotencyTemplate,
 } from './checkin-idempotency.schema';
 
-/** What [findByKey] returns. */
 export interface IdempotencyHit {
   key: string;
   userId: string;
-  checkinId: string;
+  checkinId?: string;
 }
 
 @Injectable()
@@ -21,48 +20,50 @@ export class CheckinIdempotencyDao {
   ) {}
 
   /**
-   * Look up a previously-recorded idempotency key.
+   * Atomically claim an idempotency key before the create pipeline runs.
    *
-   * Returns `null` when the key is unknown — the controller should then
-   * proceed with the normal create path. Returns the stored row when
-   * the key matches; the service decides whether the userId fits.
+   * Uses `findOneAndUpdate` with `upsert: true` so the unique index on
+   * `key` acts as the real gate — only one concurrent request can insert
+   * the row; all others see the existing document.
+   *
+   * Returns:
+   *   - `null`                        → caller won the race; proceed with create.
+   *   - `{ checkinId: string }`       → key already processed; caller should replay.
+   *   - `{ checkinId: undefined }`    → another request is still processing; caller
+   *                                     should return 409 and tell client to retry.
+   *
+   * Throws ConflictException when the key belongs to a different userId.
    */
-  async findByKey(key: string): Promise<IdempotencyHit | null> {
-    const row = await this.model.findOne({ key }).lean<IdempotencyHit>().exec();
-    if (!row) return null;
-    return { key: row.key, userId: row.userId, checkinId: row.checkinId };
+  async claimKey(key: string, userId: string): Promise<IdempotencyHit | null> {
+    const existing = await this.model
+      .findOneAndUpdate(
+        { key },
+        { $setOnInsert: { key, userId, createdAt: new Date() } },
+        { upsert: true, new: false },
+      )
+      .lean<IdempotencyHit>()
+      .exec();
+
+    if (!existing) return null; // won the race
+
+    if (existing.userId !== userId) {
+      throw new ConflictException(
+        'Idempotency-Key already used by another account',
+      );
+    }
+
+    return {
+      key: existing.key,
+      userId: existing.userId,
+      checkinId: existing.checkinId,
+    };
   }
 
   /**
-   * Persist a new (key, user, checkin) triplet. Throws if `key` is
-   * already present — the caller is expected to have called
-   * [findByKey] first, so a clash here is a real race.
+   * Finalize the idempotency record after the check-in has been created.
+   * Called once the create pipeline completes successfully.
    */
-  async record(params: {
-    key: string;
-    userId: string;
-    checkinId: string;
-  }): Promise<void> {
-    try {
-      await this.model.create({
-        key: params.key,
-        userId: params.userId,
-        checkinId: params.checkinId,
-        createdAt: new Date(),
-      });
-    } catch (err: any) {
-      // E11000 duplicate key — another request inserted first. Caller's
-      // intent is "remember this", so a best-effort retry is fine.
-      if (err?.code === 11000) {
-        const existing = await this.findByKey(params.key);
-        if (existing && existing.userId === params.userId) {
-          return; // someone beat us to it with the same user — fine.
-        }
-        throw new ConflictException(
-          'Idempotency-Key already used by another account',
-        );
-      }
-      throw err;
-    }
+  async setCheckinId(key: string, checkinId: string): Promise<void> {
+    await this.model.updateOne({ key }, { $set: { checkinId } }).exec();
   }
 }
