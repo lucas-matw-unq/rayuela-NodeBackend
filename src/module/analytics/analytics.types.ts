@@ -1,7 +1,7 @@
 export type Granularity = 'day' | 'week' | 'month';
 
 export interface TimeSeries {
-  period: string;   // ISO date string of the bucket start
+  period: string; // ISO date string of the bucket start
   count: number;
 }
 
@@ -32,12 +32,12 @@ export interface ContributionRate {
   projectName: string;
   total: number;
   withContribution: number;
-  rate: number;   // 0–1
+  rate: number; // 0–1
 }
 
 export interface SummaryStats {
   totalCheckins: number;
-  totalActiveUsers: number;    // users with at least 1 checkin
+  totalActiveUsers: number; // users with at least 1 checkin
   overallContributionRate: number;
   totalBadgesEarned: number;
   totalPointsAwarded: number;

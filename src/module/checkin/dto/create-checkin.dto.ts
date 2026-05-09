@@ -24,5 +24,4 @@ export class CreateCheckinDto {
     this.taskType = taskType;
     this.imageRefs = imageRefs;
   }
-
 }

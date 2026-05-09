@@ -125,7 +125,10 @@ export class AuthService {
     let isNewUser = false;
 
     if (!user) {
-      user = await this.usersService.findByEmailOrUsername(googleUser.email, '');
+      user = await this.usersService.findByEmailOrUsername(
+        googleUser.email,
+        '',
+      );
     }
 
     if (user) {
@@ -292,7 +295,9 @@ export class AuthService {
     }
 
     // Verify hash (constant-time)
-    if (!safeHashCompare(hashRefreshToken(refreshToken), user.refreshTokenHash)) {
+    if (
+      !safeHashCompare(hashRefreshToken(refreshToken), user.refreshTokenHash)
+    ) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 

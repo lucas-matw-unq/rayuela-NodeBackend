@@ -3,9 +3,15 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
 import { AnalyticsDao } from './analytics.dao';
-import { CheckInSchema, CheckInTemplate } from '../checkin/persistence/checkin.schema';
+import {
+  CheckInSchema,
+  CheckInTemplate,
+} from '../checkin/persistence/checkin.schema';
 import { MoveSchema, MoveTemplate } from '../checkin/persistence/move.schema';
-import { ProjectSchema, ProjectTemplate } from '../project/persistence/project.schema';
+import {
+  ProjectSchema,
+  ProjectTemplate,
+} from '../project/persistence/project.schema';
 import { UserSchema, UserTemplate } from '../auth/users/user.schema';
 
 @Module({

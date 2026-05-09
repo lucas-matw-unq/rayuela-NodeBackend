@@ -6,28 +6,68 @@ import { Granularity } from './analytics.types';
 export class AnalyticsService {
   constructor(private readonly analyticsDao: AnalyticsDao) {}
 
-  getCheckinsOverTime(projectId?: string, granularity?: Granularity, startDate?: string, endDate?: string) {
-    return this.analyticsDao.checkinsOverTime(projectId, granularity ?? 'week', startDate, endDate);
+  getCheckinsOverTime(
+    projectId?: string,
+    granularity?: Granularity,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    return this.analyticsDao.checkinsOverTime(
+      projectId,
+      granularity ?? 'week',
+      startDate,
+      endDate,
+    );
   }
 
-  getActiveUsersOverTime(projectId?: string, granularity?: Granularity, startDate?: string, endDate?: string) {
-    return this.analyticsDao.activeUsersOverTime(projectId, granularity ?? 'week', startDate, endDate);
+  getActiveUsersOverTime(
+    projectId?: string,
+    granularity?: Granularity,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    return this.analyticsDao.activeUsersOverTime(
+      projectId,
+      granularity ?? 'week',
+      startDate,
+      endDate,
+    );
   }
 
   getByStrategy() {
     return this.analyticsDao.byStrategy();
   }
 
-  getPointsOverTime(projectId?: string, granularity?: Granularity, startDate?: string, endDate?: string) {
-    return this.analyticsDao.pointsOverTime(projectId, granularity ?? 'week', startDate, endDate);
+  getPointsOverTime(
+    projectId?: string,
+    granularity?: Granularity,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    return this.analyticsDao.pointsOverTime(
+      projectId,
+      granularity ?? 'week',
+      startDate,
+      endDate,
+    );
   }
 
   getContributionRate(projectId?: string) {
     return this.analyticsDao.contributionRate(projectId);
   }
 
-  getBadgeAcquisitionOverTime(projectId?: string, granularity?: Granularity, startDate?: string, endDate?: string) {
-    return this.analyticsDao.badgeAcquisitionOverTime(projectId, granularity ?? 'week', startDate, endDate);
+  getBadgeAcquisitionOverTime(
+    projectId?: string,
+    granularity?: Granularity,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    return this.analyticsDao.badgeAcquisitionOverTime(
+      projectId,
+      granularity ?? 'week',
+      startDate,
+      endDate,
+    );
   }
 
   getSummary(projectId?: string, startDate?: string, endDate?: string) {

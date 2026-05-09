@@ -52,5 +52,4 @@ export class CheckinMapper {
     }
     return checkin;
   }
-
 }

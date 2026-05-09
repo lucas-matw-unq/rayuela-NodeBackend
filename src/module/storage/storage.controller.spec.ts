@@ -40,7 +40,7 @@ describe('StorageController', () => {
         body: mockStream,
         contentType: 'image/png',
       };
-      
+
       const mockRes = {
         setHeader: jest.fn(),
         send: jest.fn(),
@@ -49,11 +49,16 @@ describe('StorageController', () => {
       mockStorageService.getFile.mockResolvedValue(mockResponse);
 
       // We need to mock pipe because PassThrough has it
-      const pipeSpy = jest.spyOn(mockStream, 'pipe').mockImplementation((res) => res as any);
+      const pipeSpy = jest
+        .spyOn(mockStream, 'pipe')
+        .mockImplementation((res) => res as any);
 
       await controller.getFile(mockKey, mockRes);
 
-      expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'image/png');
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'image/png',
+      );
       expect(pipeSpy).toHaveBeenCalledWith(mockRes);
     });
 
@@ -63,7 +68,9 @@ describe('StorageController', () => {
 
       mockStorageService.getFile.mockRejectedValue(new Error('S3 Error'));
 
-      await expect(controller.getFile(mockKey, mockRes)).rejects.toThrow(NotFoundException);
+      await expect(controller.getFile(mockKey, mockRes)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

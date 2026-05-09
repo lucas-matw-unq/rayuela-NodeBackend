@@ -93,18 +93,35 @@ describe('AdaptiveRecommendationEngine', () => {
 
   describe('getMostSimilarTasks', () => {
     it('should return K tasks', () => {
-      const targetTask = createTask('target', 'area1', 'morning', 'type1');
-      const allTasks = [
-        createTask('task1', 'area1', 'morning', 'type1'),
-        createTask('task2', 'area2', 'afternoon', 'type2'),
-        createTask('task3', 'area1', 'evening', 'type1'),
-        createTask('task4', 'area1', 'evening', 'type5'),
-      ];
-      const similarTasks = recommendationEngine['getMostSimilarTasks'](
-        targetTask,
-        allTasks,
-      );
-      expect(similarTasks.length).toBeLessThanOrEqual(Number(process.env.K));
+      const originalK = process.env.K;
+      process.env.K = '3';
+      const engine = new AdaptiveRecommendationEngine();
+
+      try {
+        const targetTask = createTask('target', 'area1', 'morning', 'type1');
+        const allTasks = [
+          createTask('task1', 'area1', 'morning', 'type1'),
+          createTask('task2', 'area2', 'afternoon', 'type2'),
+          createTask('task3', 'area1', 'evening', 'type1'),
+          createTask('task4', 'area1', 'evening', 'type5'),
+        ];
+
+        const similarTasks = engine['getMostSimilarTasks'](
+          targetTask,
+          allTasks,
+        );
+
+        const limit = Number(process.env.K);
+        const expectedMax = Number.isNaN(limit) || limit === 0 ? 5 : limit;
+
+        expect(similarTasks.length).toBe(expectedMax);
+      } finally {
+        if (originalK === undefined) {
+          delete process.env.K;
+        } else {
+          process.env.K = originalK;
+        }
+      }
     });
   });
 

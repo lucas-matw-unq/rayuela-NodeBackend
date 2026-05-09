@@ -210,9 +210,9 @@ describe('AuthController', () => {
     });
 
     it('should throw BadRequestException if refreshToken is missing', async () => {
-      await expect(
-        controller.refresh({ refreshToken: '' }),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.refresh({ refreshToken: '' })).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
