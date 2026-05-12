@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model, Types } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CheckInTemplate, CheckInDocument } from './checkin.schema';
 import { UpdateCheckinDto } from '../dto/update-checkin.dto';
@@ -212,14 +212,5 @@ export class CheckInDao {
         Math.sin(dLng / 2) ** 2;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return EARTH_RADIUS_KM * c <= radiusKm;
-  }
-
-  /**
-   * Lightweight helper to keep `Types` referenced (for ObjectId checks
-   * downstream). Useful when admin filters arrive as raw strings.
-   */
-  static toObjectIdOrNull(id: string): Types.ObjectId | null {
-    if (!id || !Types.ObjectId.isValid(id)) return null;
-    return new Types.ObjectId(id);
   }
 }
