@@ -3,10 +3,10 @@
  *
  * Every property is optional. The class only converts and validates
  * the raw query string values; default fallbacks (e.g. page=1, limit=20)
- * live in the DAO so callers always see the same defaults.
+ * are applied in CheckinService.findForAdmin so callers always see the same defaults.
  */
 export class AdminCheckinQueryDto {
-  /** Free-text search against the related task name (case-insensitive, partial match). */
+  /** Free-text search against the related task name and description (case-insensitive, partial match). */
   taskName?: string;
 
   /** Filter by task type as stored on the checkin (exact match). */

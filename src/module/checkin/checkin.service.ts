@@ -270,6 +270,11 @@ export class CheckinService {
 
     const result = await this.checkInDao.findForAdmin(filter);
 
+    // Skip the task-enrichment DB call when there is nothing to enrich.
+    if (result.items.length === 0) {
+      return { items: [], total: result.total, page: result.page, limit: result.limit };
+    }
+
     // Build an id→task map once so the response can include task name + type.
     if (!projectTasks) {
       projectTasks = await this.taskService.findByProjectId(projectId);

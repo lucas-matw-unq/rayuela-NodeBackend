@@ -42,6 +42,14 @@ export interface AdminCheckinPage {
 
 const EARTH_RADIUS_KM = 6371;
 
+/**
+ * Maximum number of documents fetched into memory when evaluating the geo
+ * radius filter in-memory (coordinates are stored as strings so a native
+ * $geoWithin index cannot be used). This prevents unbounded memory usage for
+ * large projects while still covering realistic admin query volumes.
+ */
+const GEO_CANDIDATE_CAP = 5_000;
+
 @Injectable()
 export class CheckInDao {
   constructor(
@@ -131,7 +139,7 @@ export class CheckInDao {
       ];
     }
     if (filter.hasPhotos === true) {
-      mongoFilter.imageRefs = { $exists: true, $not: { $size: 0 } };
+      mongoFilter['imageRefs.0'] = { $exists: true };
     } else if (filter.hasPhotos === false) {
       // Either the field is missing or it's an empty array. We $and-merge
       // so we don't clobber a previous `$or` on `contributesTo`.
@@ -173,9 +181,12 @@ export class CheckInDao {
     }
 
     // Geo path: evaluate Haversine in-memory after the cheap DB filters.
+    // A cap is applied so we never load unbounded rows into memory; coordinates
+    // are stored as strings which prevents using a native $geoWithin index.
     const candidates = await this.checkInModel
       .find(mongoFilter)
       .sort({ datetime: filter.sortOrder })
+      .limit(GEO_CANDIDATE_CAP)
       .exec();
 
     const matched = candidates.filter((c) =>

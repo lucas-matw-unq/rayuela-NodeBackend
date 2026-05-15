@@ -451,8 +451,6 @@ describe('CheckinService', () => {
 
       expect(mockCheckInDao.create).not.toHaveBeenCalled();
     });
-
-    it.skip('placeholder removed', () => undefined);
   });
 
   describe('findForAdmin', () => {

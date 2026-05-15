@@ -185,7 +185,7 @@ describe('CheckInDao', () => {
 
       expect(model.find).toHaveBeenLastCalledWith({
         projectId: 'p1',
-        imageRefs: { $exists: true, $not: { $size: 0 } },
+        'imageRefs.0': { $exists: true },
       });
     });
 
@@ -245,6 +245,7 @@ describe('CheckInDao', () => {
       const outside = { latitude: '1', longitude: '0', _id: 'b' };
       const findChain = {
         sort: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
         exec: jest.fn().mockResolvedValue([inside, outside]),
       };
       mockModel.find.mockReturnValueOnce(findChain);
